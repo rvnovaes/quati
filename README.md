@@ -1,15 +1,69 @@
 Easy Lawyer
 ===========
 
-O Easy Lawyer (EZL) é um sistema web de gestão de logística jurídica que permite o controle de processos desde a prestação do serviço até o seu efetivo pagamento. O maior objetivo da ferramenta é facilitar e otimizar a contratação de advogados correspondentes para o cumprimento das providências, no menor tempo e maior qualidade.
+O Easy Lawyer (EZL) é um sistema web de gestão de logística jurídica que permite o controle de processos desde a prestação do serviço até o seu efetivo pagamento. O solicitante cadastra as providências que precisam ser cumpridas e o sistema identifica o melhor profissional para cumpri-las, considerando proximidade, preço e avaliação. O correspondente é avisado por e-mail e pode aceitar ou recusar a providência.
 
-Com o EZL, o solicitante cadastra as providências que precisam ser cumpridas e, automaticamente, o sistema identifica o melhor profissional a cumpri-la, levando-se em conta a proximidade do local da diligência, o menor preço e a avaliação dada para aquele profissional em trabalhos similares.
+Stack
+-----
 
-O sistema também envia alertas de providências para o email do correspondente, como mais uma forma de avisá-lo que há uma tarefa a ser feita. Em seguida, ele poderá aceitá-la ou recusá-la, conforme sua disponibilidade. Se recusada, a providência será enviada a outro advogado.
+- Python 3.12, Django 5.2 LTS, PostgreSQL 16, Redis 7, RabbitMQ 3
+- Celery 5 (tarefas assíncronas e agendadas), Django Channels 4 + Daphne (chat via WebSocket)
+- Gunicorn (HTTP), nginx (proxy reverso, estáticos e mídia), Postfix (envio de e-mail)
+- Tudo orquestrado por Docker Compose
 
-Site do [Easy Lawyer](http://www.ezlawyer.com.br/)
+Como rodar
+----------
 
-Atenção:
-=======
+1. Copie `.env.example` para `.env` e ajuste (pelo menos `SECRET_KEY` em produção).
+2. Escolha o ambiente:
 
-Toda a documentação de desenvolvimento deve estar contida na [wiki](https://bitbucket.org/ezlteam/ezl/wiki/Home).
+   ```bash
+   make set_env_development   # runserver com reload, Mailpit, portas expostas
+   make set_env_production    # gunicorn, nginx em 80/443, Postfix
+   ```
+
+3. Primeira subida (build, migrations, fixtures, collectstatic):
+
+   ```bash
+   make bootstrap
+   make createsuperuser
+   ```
+
+4. Nas próximas vezes: `make up`, `make logs`, `make down`.
+
+Endereços em desenvolvimento:
+
+| Serviço | URL |
+|---|---|
+| Django (runserver) | http://localhost:8000 |
+| nginx | http://localhost:8080 |
+| Mailpit (e-mails de teste) | http://localhost:8026 |
+| Flower (Celery) | http://localhost:5555 |
+| RabbitMQ management | http://localhost:8083 (guest/guest) |
+| PostgreSQL | localhost:57002 (ezl/ezl) |
+
+Comandos úteis: `make shell`, `make psql`, `make migrate`, `make migrations`, `make test`, `make check`.
+
+E-mail
+------
+
+Em desenvolvimento os e-mails vão para o Mailpit. Em produção o serviço `postfix` do compose entrega diretamente (ou via `POSTFIX_RELAYHOST`). Configure no `.env`: `EMAIL_HOST=postfix`, `EMAIL_PORT=587`, `POSTFIX_HOSTNAME`, `POSTFIX_ALLOWED_SENDER_DOMAINS` e, para boa entregabilidade, registros SPF/DKIM/PTR do domínio remetente.
+
+Se `DEFAULT_TO_EMAIL` estiver definido, todos os e-mails são redirecionados para esse endereço (útil em homologação).
+
+Os e-mails de OS são templates Django em `task/templates/mail/`. A tabela `EmailTemplate` (admin) guarda o caminho do template por status.
+
+Arquivos
+--------
+
+Uploads ficam no volume Docker `web-media` (`/app/media` no container), servidos pelo nginx em `/media/`.
+
+HTTPS em produção
+-----------------
+
+Coloque o certificado e a chave em `containers/nginx/certs/` e adicione um bloco `listen 443 ssl` em `containers/nginx/templates/default.conf.template`, ou use um certbot/Traefik externo na frente do nginx.
+
+Histórico
+---------
+
+Veja `docs/CHANGELOG-modernizacao.md` para o que mudou na modernização de 2026 (remoção do Advwin, Gerencianet, SendGrid, S3 e servidor Windows).
