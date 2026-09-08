@@ -2,7 +2,7 @@ import json
 from django import forms
 from django.forms import ModelForm
 from django.utils import timezone
-from django_file_form.forms import MultipleUploadedFileField
+from core.widgets import MultipleFileField
 
 from core.models import Person, ImportXlsFile
 from core.utils import filter_valid_choice_form, get_office_field, get_office_session
@@ -69,7 +69,7 @@ class TaskForm(BaseForm):
         }))
 
     performance_place = forms.CharField(required=True)
-    documents = MultipleUploadedFileField(required=False)
+    documents = MultipleFileField(required=False)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -100,7 +100,7 @@ class TaskForm(BaseForm):
 
 
 class TaskCreateForm(TaskForm):
-    documents = MultipleUploadedFileField(required=False)
+    documents = MultipleFileField(required=False)
 
     class Meta(TaskForm.Meta):
         fields = TaskForm.Meta.fields + ['documents']

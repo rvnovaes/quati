@@ -7,35 +7,40 @@ from .messages import person_cpf_cnpj_already_exists, invalid_field
 from .utils import get_office_session, get_office_api
 from .validators import CpfCnpjOfficeUniqueValidator
 from rest_framework.fields import SlugField
-from rest_framework.compat import unicode_to_repr
 from django.contrib.auth.models import User
 
 
 class CreateUserDefault(object):
-    def set_context(self, serializer_field):
+    requires_context = True
+
+    def __call__(self, serializer_field):
         application = serializer_field.context['request'].auth.application
         if serializer_field.context['request'].user:
             self.create_user = serializer_field.context['request'].user
         else:
             self.create_user = application.user or application.office.create_user
+        return self._value()
 
-    def __call__(self):
+    def _value(self):
         return self.create_user
 
     def __repr__(self):
-        return unicode_to_repr('%s()' % self.__class__.__name__)
+        return '%s()' % self.__class__.__name__
 
 
 class OfficeDefault(object):
-    def set_context(self, serializer_field):
+    requires_context = True
+
+    def __call__(self, serializer_field):
         self.office = serializer_field.context[
             'request'].auth.application.office
+        return self._value()
 
-    def __call__(self):
+    def _value(self):
         return self.office
 
     def __repr__(self):
-        return unicode_to_repr('%s()' % self.__class__.__name__)
+        return '%s()' % self.__class__.__name__
 
 
 class CreateUserSerializerMixin(serializers.Serializer):

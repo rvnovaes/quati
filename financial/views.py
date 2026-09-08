@@ -1,6 +1,6 @@
 import json
 from core.views import CustomLoginRequiredView
-from django.core.urlresolvers import reverse_lazy, reverse
+from django.urls import reverse_lazy, reverse
 from django.contrib import messages
 from django.shortcuts import render, redirect
 from django.db.models import Q
@@ -106,7 +106,7 @@ class CostCenterFilterAutocompleteSelect2(autocomplete.Select2QuerySetView):
         return CostCenter.objects.filter(office=get_office_session(self.request))
 
     def get_queryset(self):
-        if not self.request.user.is_authenticated():
+        if not self.request.user.is_authenticated:
             return CostCenter.objects.none()
         qs = self.base_queryset
         if self.q:

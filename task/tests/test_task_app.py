@@ -1,10 +1,10 @@
 from django.contrib.auth.models import User, Group
 # from django.core.files.uploadedfile import SimpleUploadedFile
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.test import TestCase
 from django.utils import timezone
 
-from model_mommy import mommy
+from model_bakery import baker as mommy
 
 from core.models import Person
 from lawsuit.models import Movement

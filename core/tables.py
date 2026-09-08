@@ -160,7 +160,7 @@ class OfficeTable(tables.Table):
 class InviteTable(tables.Table):
     class Meta:
         model = Invite
-        fields = ('person', 'email', 'person.auth_user', 'status')
+        fields = ('person', 'email', 'person__auth_user', 'status')
 
 
 class InviteOfficeTable(tables.Table):
@@ -178,8 +178,8 @@ class OfficeMembershipTable(tables.Table):
     class Meta:
         paginate = False
         model = OfficeMembership
-        fields = ('selection', 'person.legal_name', 'person.legal_type',
-                  'person.cpf_cnpj', 'person.auth_user.username')
+        fields = ('selection', 'person__legal_name', 'person__legal_type',
+                  'person__cpf_cnpj', 'person__auth_user__username')
 
 
 class OfficeMembershipOfficeTable(tables.Table):
@@ -190,7 +190,7 @@ class OfficeMembershipOfficeTable(tables.Table):
 
     class Meta:
         model = OfficeMembership
-        fields = ('selection', 'office.legal_name', 'office.cpf_cnpj')
+        fields = ('selection', 'office__legal_name', 'office__cpf_cnpj')
 
 
 class ContactMechanismTable(tables.Table):

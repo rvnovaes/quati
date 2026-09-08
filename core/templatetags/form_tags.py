@@ -16,3 +16,10 @@ def field_type(field):
     s = s.rpartition('Input')[0]
     s = s.lower()
     return s
+
+
+@register.filter
+def col_class(row):
+    """Classe de coluna bootstrap para uma linha com N campos (form_rows.html)."""
+    size = max(1, 12 // max(1, len(row)))
+    return 'form-group col-sm-{}'.format(size)

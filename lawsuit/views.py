@@ -3,7 +3,7 @@ from urllib.parse import urlparse
 
 from django.contrib import messages
 from django.contrib.messages.views import SuccessMessageMixin
-from django.core.urlresolvers import reverse_lazy, reverse
+from django.urls import reverse_lazy, reverse
 from django.core.validators import ValidationError
 from django.views.generic import View
 # project imports
@@ -452,6 +452,10 @@ class LawSuitDeleteView(AuditFormMixin, DeleteView):
     model = LawSuit
     success_message = DELETE_SUCCESS_MESSAGE.format(
         model._meta.verbose_name_plural)
+
+    def post(self, request, *args, **kwargs):
+        # Django >= 4 chama get_object() no post padrão; aqui a exclusão é em lote (sem pk na URL).
+        return self.delete(request, *args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
         pks = self.request.POST.getlist('selection')

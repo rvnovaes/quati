@@ -17,7 +17,7 @@ from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.serializers.json import DjangoJSONEncoder
 from core.serializers import OfficeSerializer, AddressSerializer, ContactMechanismSerializer, CustomMessageSerializer
-from django.core.urlresolvers import reverse_lazy, reverse
+from django.urls import reverse_lazy, reverse
 from django.db.models import ProtectedError, Q, F, Sum, Case, When, IntegerField
 from django.db import transaction, IntegrityError
 from django.http import HttpResponseRedirect, JsonResponse, HttpResponse
@@ -174,8 +174,25 @@ def logout_user(request):
     return HttpResponseRedirect('/')
 
 
+def _form_accepts_request(form_class):
+    """Só repassa request= para forms que o aceitam (BaseModelForm ou __init__ com parâmetro request)."""
+    import inspect
+    from core.forms import BaseModelForm
+    if issubclass(form_class, BaseModelForm):
+        return True
+    try:
+        params = inspect.signature(form_class.__init__).parameters
+    except (TypeError, ValueError):
+        return False
+    return 'request' in params
+
+
 class MultiDeleteViewMixin(DeleteView):
     success_message = None
+
+    def post(self, request, *args, **kwargs):
+        # Django >= 4 chama get_object() no post padrão; aqui a exclusão é em lote (sem pk na URL).
+        return self.delete(request, *args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
         if request.method == 'POST':
@@ -203,6 +220,10 @@ class MultiDeleteView(DeleteView):
     success_message = None
     error_message = 'Não é possível fazer exclusão do(s) registro(s) selecionado(s) porque existe(m) ' \
                     +'informações associadas na tabela %s para o registro %s.'
+
+    def post(self, request, *args, **kwargs):
+        # Django >= 4 chama get_object() no post padrão; aqui a exclusão é em lote (sem pk na URL).
+        return self.delete(request, *args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
         if request.method == 'POST':
@@ -325,7 +346,9 @@ class AuditFormMixin(CustomLoginRequiredView, SuccessMessageMixin):
 
     def get_form_kwargs(self):
         kw = super().get_form_kwargs()
-        kw['request'] = self.request
+        form_class = self.get_form_class()
+        if _form_accepts_request(form_class):
+            kw['request'] = self.request
         return kw
 
     def get_context_data(self, **kwargs):
@@ -2072,8 +2095,7 @@ class MediaFileView(LoginRequiredMixin, View):
         if os.path.exists(os.path.join(settings.MEDIA_ROOT, path)):
             return static_serve_view(
                 self.request, path, document_root=settings.MEDIA_ROOT)
-        return HttpResponseRedirect(
-            urljoin(settings.AWS_STORAGE_BUCKET_URL, path))
+        raise Http404('Arquivo não existe')
 
 
 class OfficePermissionRequiredMixin(PermissionRequiredMixin):

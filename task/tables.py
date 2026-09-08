@@ -70,7 +70,7 @@ class DashboardStatusTable(tables.Table):
     client = tables.Column(orderable=True)
     description = tables.Column(orderable=False)
     type_task = tables.Column(orderable=True)
-    opposing_party = tables.Column(accessor='movement.law_suit.opposing_party')
+    opposing_party = tables.Column(accessor='movement__law_suit__opposing_party')
     origin_code = tables.Column(order_by=('parent_task_number', 'legacy_code'))
     status = tables.TemplateColumn(
         template_name="task/task_status_column.html", orderable=False)

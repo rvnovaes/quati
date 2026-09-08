@@ -6,7 +6,7 @@ import time
 from django.conf import settings
 from django.db import models
 from django.contrib.auth.models import User, Group
-from django.contrib.postgres.fields import JSONField
+from django.db.models import JSONField
 
 from core.managers import PersonManager
 from core.utils import LegacySystem, clear_cpf_cnpj
@@ -364,9 +364,9 @@ class Company(models.Model):
 
 class CompanyUser(models.Model):
     user = models.ForeignKey(
-        User, verbose_name='Usuário', related_name='companys')
+        User, verbose_name='Usuário', related_name='companys', on_delete=models.PROTECT)
     company = models.ForeignKey(
-        Company, verbose_name='Empresa', related_name='users')
+        Company, verbose_name='Empresa', related_name='users', on_delete=models.PROTECT)
     show_administrative_menus = models.BooleanField(
         verbose_name="Mostrar menus administrativos", default=False)
 
@@ -404,7 +404,7 @@ class Person(AbstractPerson):
         Company,
         verbose_name='Compartilhar com empresa',
         null=True,
-        blank=True)
+        blank=True, on_delete=models.PROTECT)
 
     refunds_correspondent_service = models.BooleanField(
         null=False, default=False, verbose_name='Cliente reembolsa valor gasto com serviço de correspondência')
@@ -702,7 +702,7 @@ class InviteOffice(Audit, OfficeMixin):
         blank=False,
         null=False,
         related_name='invites_offices',
-        verbose_name='Escritório convidado')
+        verbose_name='Escritório convidado', on_delete=models.PROTECT)
     status = models.CharField(
         choices=INVITE_STATUS,
         default='N',
@@ -887,9 +887,9 @@ class ImportXlsFile(Audit, OfficeMixin):
 
 class ExternalApplication(AbstractApplication):
     office = models.ForeignKey(
-        Office, verbose_name='Escritório', blank=True, null=True)
+        Office, verbose_name='Escritório', blank=True, null=True, on_delete=models.PROTECT)
     company = models.ForeignKey(
-        Company, verbose_name='Empresa', blank=True, null=True)
+        Company, verbose_name='Empresa', blank=True, null=True, on_delete=models.PROTECT)
 
     class Meta:
         verbose_name = 'Aplicação externa'
@@ -918,14 +918,14 @@ class ControlFirstAccessUser(models.Model):
 
 
 class CustomSettings(Audit):
-    office = models.OneToOneField(Office, verbose_name='Escritório')
-    default_user = models.ForeignKey(User, verbose_name='Usuário default', blank=True, null=True)
+    office = models.OneToOneField(Office, verbose_name='Escritório', on_delete=models.PROTECT)
+    default_user = models.ForeignKey(User, verbose_name='Usuário default', blank=True, null=True, on_delete=models.PROTECT)
     email_to_notification = models.EmailField(verbose_name='E-mail para receber notificações',
                                               null=True, blank=True)
     i_work_alone = models.BooleanField(default=True)
     default_customer = models.ForeignKey(Person, verbose_name='Cliente padrão',
                                          blank=True, null=True,
-                                         limit_choices_to={"is_customer": True})
+                                         limit_choices_to={"is_customer": True}, on_delete=models.PROTECT)
     show_task_in_admin_dash = models.BooleanField(default=True, verbose_name='Mostrar as OSs deste escritório no Dash')
 
     class Meta:
@@ -938,7 +938,7 @@ class CustomSettings(Audit):
 class EmailTemplate(models.Model):
     name = models.CharField(verbose_name='Nome do template', max_length=255)
     template_id = models.CharField(
-        verbose_name='Id do tempĺate (sendgrid)', max_length=255)
+        verbose_name='Template (caminho do arquivo .html)', max_length=255)
 
     class Meta:
         verbose_name = 'E-mail templates'
@@ -961,7 +961,7 @@ class AreaOfExpertise(models.Model):
 
 
 class BaseHistoricalModel(models.Model):
-    history_office = models.ForeignKey(Office, null=True, blank=True)
+    history_office = models.ForeignKey(Office, null=True, blank=True, on_delete=models.PROTECT)
     history_notes = models.TextField(null=True, blank=True)
 
     class Meta:

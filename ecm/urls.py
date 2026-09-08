@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 # Author: Christian Douglas <christian.douglas.alcantara@gmail.com>
-from django.conf.urls import url
+from django.urls import re_path as url
 from django.contrib.auth.decorators import login_required
 from . import views
+
+app_name = 'ecm'
 
 urlpatterns = [
     url(r'^ajax-upload/$', login_required(views.UploadView.as_view()), name='ajax-upload'),

@@ -1,12 +1,12 @@
 from django.db import models
 from core.models import Company
-from django.contrib.postgres.fields import JSONField
+from django.db.models import JSONField
 import json
 from .schemas import *
 
 
 class Dashboard(models.Model):
-    company = models.ForeignKey(Company, verbose_name='Empresa')
+    company = models.ForeignKey(Company, verbose_name='Empresa', on_delete=models.PROTECT)
     logo = models.ImageField(verbose_name='Logo', null=True, blank=True)
     refresh = models.IntegerField(
         verbose_name='Refresh por millesegundo', blank=True, null=True)
@@ -26,32 +26,48 @@ class Component(models.Model):
         return self.name
 
 
+def default_card_schema():
+    return json.dumps(CARD, indent=4)
+
+
+def default_line_schema():
+    return json.dumps(LINE, indent=4)
+
+
+def default_doughnut_schema():
+    return json.dumps(DOUGHNUT, indent=4)
+
+
+def default_bar_schema():
+    return json.dumps(BAR, indent=4)
+
+
 class Card(Component):
     dashboards = models.ManyToManyField(
         Dashboard, related_name='cards', through='DashboardCard', blank=True)
     schema = JSONField(verbose_name=u'Schema', blank=True,
-                       null=True, default=json.dumps(CARD, indent=4))
+                       null=True, default=default_card_schema)
 
 
 class LineChart(Component):
     dashboards = models.ManyToManyField(
         Dashboard, related_name='line_charts', through='DashboardLineChart', blank=True)
     schema = JSONField(verbose_name=u'Schema', blank=True,
-                       null=True, default=json.dumps(LINE, indent=4))
+                       null=True, default=default_line_schema)
 
 
 class DoughnutChart(Component):
     dashboards = models.ManyToManyField(
         Dashboard, related_name='doughnut_charts', through='DashboardDoughnutChart', blank=True)
     schema = JSONField(verbose_name=u'Schema', blank=True,
-                       null=True, default=json.dumps(DOUGHNUT, indent=4))
+                       null=True, default=default_doughnut_schema)
 
 
 class BarChart(Component):
     dashboards = models.ManyToManyField(
         Dashboard, related_name='bar_charts', through='DashboardBarChart', blank=True)
     schema = JSONField(verbose_name=u'Schema', blank=True,
-                       null=True, default=json.dumps(BAR, indent=4))
+                       null=True, default=default_bar_schema)
 
 
 class DashboardComponent(models.Model):

@@ -66,7 +66,7 @@ class CityResource(resources.ModelResource):
                                                          'state__initials__iexact': row['UF']}).first()
         return court_district.name if court_district else ''
 
-    def before_import(self, dataset, using_transactions, dry_run, **kwargs):
+    def before_import(self, dataset, **kwargs):
         self.file_id = kwargs.get('xls_file_id')
         self.xls_file = ImportXlsFile.objects.get(pk=self.file_id)
         self.total_lines = len(dataset)

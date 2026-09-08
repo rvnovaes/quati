@@ -1,6 +1,6 @@
 {% extends "skeleton/base.html" %}
 
-{% load staticfiles %}
+{% load static %}
 
 {% block extra_stylesheets %}
 <link href="{% static 'skeleton/plugins/bower_components/datatables/jquery.dataTables.min.css' %}" rel="stylesheet" type="text/css" />
@@ -9,7 +9,7 @@
 {% endblock %}
 
 {% block content %}
-{% load staticfiles bootstrap3 %}
+{% load static bootstrap3 %}
     
     {% include 'core/widgets/messages.html' %}
 

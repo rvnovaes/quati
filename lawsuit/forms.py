@@ -181,7 +181,7 @@ class OrganForm(BaseForm):
         super(OrganForm, self).__init__(*args, **kwargs)
         self.fields['office'] = get_office_field(self.request)
         for field_name, field in self.fields.items():
-            if field_name is 'cnpj':
+            if field_name == 'cnpj':
                 field.initial = self.instance.cpf_cnpj
 
     cpf_cnpj = BRCNPJField(

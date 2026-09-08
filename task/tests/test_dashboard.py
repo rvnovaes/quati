@@ -1,8 +1,8 @@
 import json
 from django.contrib.auth.models import User
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.test import TestCase
-from model_mommy import mommy
+from model_bakery import baker as mommy
 from task.models import Task, TaskStatus
 
 

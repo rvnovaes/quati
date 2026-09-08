@@ -6,55 +6,11 @@
                         <h1 class="panel-title"><i class="panel-title mdi mdi-paperclip"></i> Anexos </h1>
                     </div>
                     <div class="panel-body">
-                        <fieldset>
-
+                        <div class="form-group">
                             {{ form.documents }}
-                            <script type="text/template" id="qq-template">
-                                <div class="qq-uploader-selector qq-uploader">
-                                    <div class="qq-upload-drop-area-selector qq-upload-drop-area" qq-hide-dropzone>
-                                        <span>Solte os arquivos aqui para fazer o Upload</span>
-                                    </div>
-                                    <ul class="qq-upload-list-selector qq-upload-list">
-                                        <li class="p-b-10 b-b">
-                                            <div class="qq-progress-bar-container-selector">
-                                                <div class="qq-progress-bar-selector qq-progress-bar"></div>
-                                            </div>
-                                            <span class="qq-upload-spinner-selector qq-upload-spinner"></span>
-                                            <span class="qq-edit-filename-icon-selector qq-edit-filename-icon"></span>
-                                            <div class="col-md-1 circle circle-sm bg-info di"><i class="fa fa-user"></i></div>
-                                            <div class="col-md-3">
-                                                <span class="font-bold"> {{ request.user }}</span><br />
-                                                <span class="text-muted"> {% now "d/m/Y H:i" %}</span>
-                                            </div>
-                                            <div class="col-md-4">
-                                                <h4><i class="fa fa-file-o"></i>&nbsp;<span class="qq-upload-file-selector qq-upload-file"></span></h4>
-                                                <input class="qq-edit-filename-selector qq-edit-filename" tabindex="0" type="text">
-                                            </div>
-                                            <div class="col-md-2">
-                                                <h4><span class="qq-upload-size-selector qq-upload-size h4 font-light"></span></h4>
-                                            </div>
-                                            <a class="qq-upload-cancel-selector qq-upload-cancel" href="#">Cancelar</a>
-                                            <a class="qq-upload-retry-selector qq-upload-retry" href="#">Reenviar</a>
-                                            <div class="col-md-2 text-right">
-                                                <a class="btn btn-danger btn-outline btn-circle btn-sm m-r-5 qq-upload-delete-selector qq-upload-delete icon-trash"
-                                                   href="#" style="padding-top: 0.8rem;padding-left: 0.19rem"></a>
-                                            </div>
-                                            <span class="qq-upload-status-text-selector qq-upload-status-text"></span>
-                                            <div class="clearfix"></div>
-                                        </li>
-                                    </ul>
-                                    <div class="clearfix"></div>
-                                    <div class="qq-upload-button-selector">
-                                        <button type="button" class="btn btn-sm btn-info btn-raised">
-                                            <i class="icon-cloud-upload"></i> &nbsp; Enviar arquivo(s)
-                                        </button>
-                                    </div>
-                                    <span class="qq-drop-processing-selector qq-drop-processing">
-                                        <span class="qq-drop-processing-spinner-selector qq-drop-processing-spinner"></span>
-                                    </span>
-                                </div>
-                            </script>
-                        </fieldset>
+                            {% if form.documents.errors %}<span class="help-block text-danger">{{ form.documents.errors }}</span>{% endif %}
+                            <p class="help-block">Selecione um ou mais arquivos. Eles serão enviados ao salvar o formulário.</p>
+                        </div>
                     </div>
                 </div>
             </div>

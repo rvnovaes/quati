@@ -7,7 +7,7 @@ from django.conf import settings
 from django.contrib import messages
 from core.views import CustomLoginRequiredView
 from django.contrib.auth.decorators import login_required
-from django.core.urlresolvers import reverse_lazy, reverse
+from django.urls import reverse_lazy, reverse
 from django.db import IntegrityError
 from core.views import AuditFormMixin, MultiDeleteViewMixin, SingleTableViewMixin
 from core.messages import CREATE_SUCCESS_MESSAGE, DELETE_SUCCESS_MESSAGE, UPDATE_SUCCESS_MESSAGE, \
@@ -155,7 +155,7 @@ def ajax_drop_attachment(request, pk):
 class DefaultAttachmentRuleListView(CustomLoginRequiredView, SingleTableViewMixin):
     model = DefaultAttachmentRule
     table_class = DefaulAttachmentRuleTable
-    ordering = ('correspondent', )
+    ordering = ('id', )
     paginate_by = 30
 
 

@@ -64,7 +64,6 @@ from babel.numbers import format_currency
 from task import signals
 from django.db.models.signals import pre_save, post_save
 from dal import autocomplete
-from billing.gerencianet_api import api as gn_api
 import logging
 import operator
 from manager.template_values import ListTemplateValues
@@ -1706,8 +1705,7 @@ class ExternalMediaFileView(View):
             if os.path.exists(os.path.join(settings.MEDIA_ROOT, path)):
                 return static_serve_view(
                     self.request, path, document_root=settings.MEDIA_ROOT)
-            return HttpResponseRedirect(
-                urljoin(settings.AWS_STORAGE_BUCKET_URL, path))
+        raise Http404('Arquivo não existe')
         raise Http404('Arquivo não existe')
 
 
@@ -2241,7 +2239,7 @@ class TypeTaskAutocomplete(autocomplete.Select2QuerySetView):
         return TypeTask.objects.filter(is_active=True, office=get_office_session(self.request))
 
     def get_queryset(self):
-        if not self.request.user.is_authenticated():
+        if not self.request.user.is_authenticated:
             return TypeTask.objects.none()
         qs = self.base_queryset
         if self.q:
@@ -2257,7 +2255,7 @@ class TypeTaskFilterAutocomplete(TypeTaskAutocomplete):
 
 class TypeTaskMainAutocomplete(autocomplete.Select2QuerySetView):
     def get_queryset(self):
-        if not self.request.user.is_authenticated():
+        if not self.request.user.is_authenticated:
             return TypeTaskMain.objects.none()
         qs = TypeTaskMain.objects.all()
         if self.q:

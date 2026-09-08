@@ -57,7 +57,7 @@ class LawSuitViewSet(OfficeMixinViewSet):
 
 class CompanyLawsuitViewSet(LawSuitViewSet):
     def get_queryset(self):
-        if self.request.user.is_authenticated():
+        if self.request.user.is_authenticated:
             return LawSuit.objects.filter(
                 folder__person_customer__company__in=Company.objects.filter(
                     users__user=self.request.user))

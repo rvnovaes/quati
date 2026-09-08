@@ -1,12 +1,11 @@
 import os
-from django.conf.urls import url, include
+from django.urls import re_path as url, include
 from core.urls_api import router as router_core, urlpatterns as task_urlpatterns
 from lawsuit.urls_api import router as router_lawsuit
 from financial.urls_api import router as router_financial
 from task.urls_api import router as router_task
 from dashboard.urls_api import router as router_dashboard
 from chat.urls_api import router as router_chat
-from rest_framework.documentation import include_docs_urls
 from rest_framework.authtoken import views
 
 urlpatterns = [

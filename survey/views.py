@@ -1,6 +1,6 @@
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from core.views import CustomLoginRequiredView, OfficePermissionRequiredMixin
-from django.core.urlresolvers import reverse_lazy
+from django.urls import reverse_lazy
 
 from django.views.generic import TemplateView
 from django.views.generic.edit import CreateView, UpdateView, FormView
