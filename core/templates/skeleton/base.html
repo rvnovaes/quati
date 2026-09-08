@@ -2,7 +2,7 @@
 {% load guardian_tags %}
 {% load core_filters core_match %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
 
 <head>
     <meta charset="utf-8">
@@ -11,7 +11,13 @@
     <meta name="description" content="">
     <meta name="author" content="">
     <link rel="icon" type="image/png" sizes="16x16" href="{% static 'img/favicon.png' %}">
-    <title>{{ title_page }}</title>
+    <title>{{ title_page|default:"Quati" }}</title>
+    <script>
+        /* aplica o tema salvo antes do primeiro paint (ver quati/theme.js) */
+        (function () { try { var t = localStorage.getItem('quati-theme'); if (t === 'light' || t === 'dark') { document.documentElement.setAttribute('data-theme', t); } } catch (e) {} })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
     <!-- ============================================================== -->
     <!-- jQuery -->
     <script src="{% static 'skeleton/plugins/bower_components/jquery/dist/jquery.min.js' %}?rev={{request.REVIEW}}"></script>
@@ -35,6 +41,9 @@
     <!-- ============================================================== -->
     <!-- EZL CSS -->
     <link href="{% static 'skeleton/css/ezl.css' %}" rel="stylesheet">
+    <!-- Tema Quati (sobrescreve o tema Ample) -->
+    <link href="{% static 'quati/quati.css' %}?rev={{request.REVIEW}}" rel="stylesheet">
+    <script src="{% static 'quati/theme.js' %}?rev={{request.REVIEW}}"></script>
     {% if is_popup %}
     <style type="text/css">
         .navbar, .bg-title, .sidebar-head, .sidebar{
@@ -48,7 +57,7 @@
 
 </head>
 
-<body class="fix-header">
+<body class="fix-header{% if is_popup %} q-popup{% endif %}">
     <!-- ============================================================== -->
     <!-- Preloader -->
     <!-- ============================================================== -->
@@ -88,20 +97,22 @@
                     <!-- Block Page Title -->
                     {% block page_title %}
                         <div class="row bg-title">
-                            <div class="col-lg-3 col-md-4 col-sm-4 col-xs-12">
+                            <div class="col-lg-5 col-md-5 col-sm-5 col-xs-12">
                                 <h4 class="page-title">
                                 {% if form_name_plural %}
                                     {{ form_name_plural }}
                                 {% elif object %}
                                     {{ object }}
+                                {% elif page_title %}
+                                    {{ page_title }}
                                 {% endif %}
                                 </h4>
                             </div>
-                            <div class="col-lg-9 col-sm-8 col-md-8 col-xs-12">
+                            <div class="col-lg-7 col-sm-7 col-md-7 col-xs-12">
                                 {% block bar_buttons %}
                                 {% endblock %}
                                 <ol class="breadcrumb">
-                                    <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                                    <li><a href="{% url 'dashboard' %}">Início</a></li>
                                     {% if page_title %}
                                         <li class="active">{{ page_title }}</li>
                                     {% endif %}

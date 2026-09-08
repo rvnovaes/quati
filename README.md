@@ -64,6 +64,11 @@ HTTPS em produção
 
 Coloque o certificado e a chave em `containers/nginx/certs/` e adicione um bloco `listen 443 ssl` em `containers/nginx/templates/default.conf.template`, ou use um certbot/Traefik externo na frente do nginx.
 
+Identidade visual (Quati)
+-------------------------
+
+O tema fica em `core/static/quati/quati.css` (tokens de cor para tema claro e escuro, tipografia Bricolage Grotesque / Manrope / JetBrains Mono) e sobrescreve o tema Ample sem mudar o HTML das telas. O seletor claro/escuro (`core/static/quati/theme.js`) guarda a escolha no navegador. A marca está em `core/templates/skeleton/includes/brand.html`: para usar o logo definitivo, troque o `<svg>` por uma `<img>`.
+
 Histórico
 ---------
 

@@ -880,6 +880,8 @@ class DashboardView(CustomLoginRequiredView, TemplateView):
         checker = ObjectPermissionChecker(person.auth_user)
         ret_status_dict, office_session = self.get_data(person, checker)
         context['ret_status_dict'] = ret_status_dict
+        context.update(self.get_flow_context(ret_status_dict, context['cards_to_show']))
+        context.update(self.get_deadlines_context(person, checker))
 
         if not self.request.user.get_all_permissions():
             context['messages'] = [{
@@ -887,6 +889,80 @@ class DashboardView(CustomLoginRequiredView, TemplateView):
                 'message': NO_PERMISSIONS_DEFINED
             }]
         return context
+
+    # Etapas do fluxo principal da OS, na ordem em que aparecem na faixa do dashboard.
+    FLOW_STATUSES = (TaskStatus.REQUESTED, TaskStatus.ACCEPTED_SERVICE, TaskStatus.OPEN,
+                     TaskStatus.ACCEPTED, TaskStatus.DONE, TaskStatus.FINISHED)
+    FLOW_HINTS = {
+        TaskStatus.REQUESTED: 'aguardando delegação',
+        TaskStatus.ACCEPTED_SERVICE: 'aceita pelo service',
+        TaskStatus.OPEN: 'delegada, sem resposta',
+        TaskStatus.ACCEPTED: 'aceita pelo correspondente',
+        TaskStatus.DONE: 'aguardando conferência',
+        TaskStatus.FINISHED: 'conferida e paga',
+    }
+    SIDE_CHIP_CLASS = {
+        TaskStatus.ERROR: 'q-chip-bad', TaskStatus.REFUSED_SERVICE: 'q-chip-bad', TaskStatus.REFUSED: 'q-chip-bad',
+        TaskStatus.RETURN: 'q-chip-warn', TaskStatus.BLOCKEDPAYMENT: 'q-chip-muted',
+    }
+
+    def get_flow_context(self, ret_status_dict, cards_to_show):
+        """Separa os status em etapas do fluxo (faixa) e estados fora do fluxo (chips)."""
+        by_name = {}
+        for key, item in ret_status_dict.items():
+            if isinstance(item, dict) and item.get('name'):
+                by_name[item['name']] = item
+        flow, side = [], []
+        for status in self.FLOW_STATUSES:
+            item = by_name.get(status.name)
+            if not item or (cards_to_show and status.value not in cards_to_show):
+                continue
+            flow.append(dict(item, hint=self.FLOW_HINTS[status],
+                             css='q-done' if status is TaskStatus.FINISHED else 'q-s{}'.format(min(len(flow), 3)),
+                             dom_id=item['status'].replace(' ', '').lower()))
+        for status, css in self.SIDE_CHIP_CLASS.items():
+            item = by_name.get(status.name)
+            if not item or (cards_to_show and status.value not in cards_to_show):
+                continue
+            side.append(dict(item, css=css, dom_id=item['status'].replace(' ', '').lower()))
+        return {'flow_statuses': flow, 'side_statuses': side}
+
+    def get_deadlines_context(self, person, checker):
+        """OS ativas com prazo fatal nos próximos 7 dias, para a tabela de prazos."""
+        office_session = get_office_session(self.request)
+        data, _ = get_dashboard_tasks(self.request, office_session, checker, person)
+        now = timezone.now()
+        active = [TaskStatus.REQUESTED.value, TaskStatus.ACCEPTED_SERVICE.value, TaskStatus.OPEN.value,
+                  TaskStatus.ACCEPTED.value, TaskStatus.RETURN.value]
+        queryset = data.filter(task_status__in=active, final_deadline_date__lte=now + timezone.timedelta(days=7)) \
+            .select_related('type_task', 'person_executed_by', 'movement__law_suit__court_district') \
+            .order_by('final_deadline_date')
+        chip_for = {
+            TaskStatus.REQUESTED.value: 'q-chip-muted', TaskStatus.ACCEPTED_SERVICE.value: 'q-chip-info',
+            TaskStatus.OPEN.value: 'q-chip-bad', TaskStatus.ACCEPTED.value: 'q-chip-warn', TaskStatus.RETURN.value: 'q-chip-warn',
+        }
+        deadlines = []
+        for task in queryset[:8]:
+            deadline = timezone.localtime(task.final_deadline_date) if task.final_deadline_date else None
+            child = task.get_latest_child_not_refused
+            executed_by = task.person_executed_by or (child.office if child else None)
+            if deadline is None:
+                urgency = ''
+            elif deadline < now:
+                urgency = 'q-due-hot'
+            elif (deadline - now).total_seconds() < 48 * 3600:
+                urgency = 'q-due-hot'
+            elif (deadline - now).total_seconds() < 4 * 86400:
+                urgency = 'q-due-soon'
+            else:
+                urgency = ''
+            deadlines.append({
+                'pk': task.pk, 'task_number': task.task_number, 'type_task': task.type_task,
+                'executed_by': executed_by, 'court_district': task.court_district,
+                'deadline': deadline, 'overdue': bool(deadline and deadline < now), 'urgency': urgency,
+                'status': task.task_status, 'chip': chip_for.get(task.task_status, 'q-chip-muted'),
+            })
+        return {'deadlines': deadlines, 'deadlines_total': queryset.count(), 'today': timezone.localtime(now)}
 
     def get_data(self, person, checker):
         office_session = get_office_session(self.request)

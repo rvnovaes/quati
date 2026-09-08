@@ -12,6 +12,7 @@
         </a>
     </li>
     {% if 'can_access_general_data' in office_session_perms %}
+    <li class="q-menu-group">Trabalho</li>
     <li id="id_cadastros"> <!-- CADASTROS -->
         <a href="javascript:void(0)" class="waves-effect">
             <i class="fa fa-pencil-square-o fa-fw" data-icon="v"></i>
@@ -111,6 +112,7 @@
     </li>
     {% endif %}
     {% if 'can_access_general_data' in office_session_perms %}
+    <li class="q-menu-group">Escritório</li>
     <li id="id_administracao"> <!-- ADMINISTRAÇÃO -->
         <a href="javascript:void(0)" class="waves-effect">
             <i class="fa fa-folder-o fa-fw" data-icon="v"></i>

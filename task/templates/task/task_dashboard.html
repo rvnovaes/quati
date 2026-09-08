@@ -19,55 +19,96 @@
         }
     </style>
 {% endblock %}
+{% block page_title %}{% endblock page_title %}
 {% block content %}
     {% include 'core/custom_message.html'%}
     {% include 'core/widgets/messages.html' %}
-    {% for message in messages %}
-    {%endfor%}
     <div class="col-md-12">
-        <div class="row">
-            <div class="row">
-                <div class="col-md-6 col-sm-6" id="id_total">
-                    <div class="white-box">
-                        <h3 class="box-title m-b-0">Total</h3>
-                        <h1 id="total" class="m-b-0 m-t-0 font-medium">{{ ret_status_dict.total }}</h1>
-                    </div>
+        <div class="q-page-head">
+            <div>
+                <h1>Ordens de serviço</h1>
+                <p>{{ today|date:"l, j \d\e F"|capfirst }}.
+                   {% if deadlines_total %}{{ deadlines_total }} prazo{{ deadlines_total|pluralize }} vence{{ deadlines_total|pluralize:"m" }} nos próximos 7 dias.{% else %}Nenhum prazo vence nos próximos 7 dias.{% endif %}</p>
+            </div>
+            <div class="q-actions">
+                {% if 'can_access_general_data' in office_session_perms %}
+                    <a class="q-btn q-btn-ghost" href="{% url 'import_task_list' %}">Importar planilha</a>
+                    <a class="q-btn q-btn-primary" href="{% url 'task_add' %}"><i class="mdi mdi-plus"></i> Criar OS</a>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="q-panel">
+            <div class="q-panel-head">
+                <h2>Onde as <span id="total" class="q-num">{{ ret_status_dict.total }}</span> OS estão no fluxo</h2>
+                <span>clique numa etapa para listar</span>
+            </div>
+            <div class="q-flow">
+                <div class="q-ribbon" role="list" aria-label="OS por etapa do fluxo">
+                    {% for item in flow_statuses %}
+                        <a class="{{ item.css }}{% if not item.total %} q-zero{% endif %}" style="flex: {{ item.total|default:1 }} 1 44px" role="listitem"
+                           title="{{ item.title }}: {{ item.total }}" data-status="{{ item.status }}"
+                           {% if item.total %}href="#modal-view-task-table" data-toggle="modal"{% else %}href="javascript:void(0)"{% endif %}>
+                            <span id="{{ item.dom_id }}" class="status-total">{{ item.total }}</span>
+                        </a>
+                    {% endfor %}
                 </div>
-                <div class="col-md-6 col-sm-6">
-                    <div class="white-box">
-                        <h3 class="box-title m-b-0">OS's solicitadas no m&ecirc;s</h3>
-                        <h1 id="total_requested_month" class="m-b-0 m-t-0 font-medium">{{ ret_status_dict.total_requested_month }}</h1>
-                    </div>
+                <div class="q-legend">
+                    {% for item in flow_statuses %}
+                        <a class="{{ item.css }}" data-status="{{ item.status }}" {% if item.total %}href="#modal-view-task-table" data-toggle="modal"{% else %}href="javascript:void(0)"{% endif %}>
+                            <b><i class="{{ item.task_icon }}"></i> {{ item.title }}</b>{{ item.hint }}
+                        </a>
+                    {% endfor %}
+                </div>
+                {% if side_statuses %}
+                <div class="q-side-states">
+                    {% for item in side_statuses %}
+                        <a class="q-chip {{ item.css }}" data-status="{{ item.status }}" {% if item.total %}href="#modal-view-task-table" data-toggle="modal"{% else %}href="javascript:void(0)"{% endif %}>
+                            <i class="q-dot"></i><span id="{{ item.dom_id }}" class="status-total">{{ item.total }}</span>&nbsp;{{ item.title|lower }}
+                        </a>
+                    {% endfor %}
+                    <span class="q-chip q-chip-ok"><i class="q-dot"></i><span id="total_requested_month">{{ ret_status_dict.total_requested_month }}</span>&nbsp;solicitadas neste mês</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="q-grid-2">
+            <div class="q-panel">
+                <div class="q-panel-head"><h2>Prazos dos próximos 7 dias</h2><span>ordenado pelo prazo fatal</span></div>
+                {% if deadlines %}
+                <div class="q-table-wrap">
+                    <table class="q-table">
+                        <thead><tr><th>OS</th><th>Correspondente</th><th>Comarca</th><th>Prazo</th><th>Situação</th></tr></thead>
+                        <tbody>
+                        {% for item in deadlines %}
+                            <tr onclick="window.location='{% url 'task_detail' item.pk %}'">
+                                <td class="q-os">#{{ item.task_number }}<small>{{ item.type_task|default:"" }}</small></td>
+                                <td>{{ item.executed_by|default:"—" }}</td>
+                                <td>{{ item.court_district|default:"—" }}</td>
+                                <td class="q-due {{ item.urgency }}">{% if item.overdue %}venceu {% endif %}{{ item.deadline|date:"D d/m H:i" }}</td>
+                                <td><span class="q-chip {{ item.chip }}"><i class="q-dot"></i>{{ item.status }}</span></td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="q-empty">Nenhuma OS ativa vence nos próximos 7 dias.</div>
+                {% endif %}
+            </div>
+            <div>
+                <div class="q-panel q-stat">
+                    <div class="q-n" id="total_requested_month_stat">{{ ret_status_dict.total_requested_month }}</div>
+                    <div class="q-l">OS solicitadas neste mês</div>
+                </div>
+                <div class="q-panel q-stat">
+                    <div class="q-n">{{ deadlines_total }}</div>
+                    <div class="q-l">prazos nos próximos 7 dias · <a href="{% url 'task_search' %}">ver todas as OS</a></div>
                 </div>
             </div>
-            {% for status_name, status_items in ret_status_dict.items %}
-                {% if status_items.name and status_items.title != 'Inválida'%}
-                    {% if not cards_to_show or status_items.status in cards_to_show %}
-                    <div class="col-lg-3 col-md-6 col-sm-6 col-xs-12" id="id_{{ status_items.name|lower }}">
-                        <a {% if status_items.total %}href="#modal-view-task-table" data-toggle="modal"{% else %}href="javascript:swal('Não há dados para exibir.')"{% endif %} data-status="{{ status_items.status }}">
-                        <div class="white-box">
-                            <h5 class="font-bold ezl-text-{{ status_items.name|lower }}" style="min-height: 32px">{{ status_items.title }}</h5>
-                            <div class="text-left">
-                                <h1>
-                                    <sup>
-                                        <i class="{{ status_items.task_icon }} ezl-text-{{ status_items.name|lower }} font-30"></i>
-                                    </sup>
-                                    <span id="{{ status_items.status|remove_spaces_lower }}" class="pull-right status-total">{{status_items.total}}</span>
-                                </h1>
-                            </div>{% get_percent status_items.total ret_status_dict.total as percent %}
-                            <span class="text-success" id="{{ status_items.status|remove_spaces_lower }}_percent">{{ percent|stringformat:".02f" }}%</span> <div class="progress m-b-0">
-                            <div id="{{ status_items.status|remove_spaces_lower }}_percent_bar" class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="{{ percent|stringformat:"d" }}" aria-valuemin="0" aria-valuemax="100" style="width:{{ percent|stringformat:"d" }}%;">
-                                <span class="sr-only">{{ percent|stringformat:".02d" }}% Complete</span> </div>
-                            </div>
-                        </div>
-                        </a>
-                    </div>
-                    {% endif %}
-                {% endif %}
-            {% endfor %}
         </div>
     </div>
-</div>
 {% endblock content %}
 
 {% block extra_scripts %}
