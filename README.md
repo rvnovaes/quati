@@ -22,12 +22,13 @@ Como rodar
    make set_env_production    # gunicorn, nginx em 80/443, Postfix
    ```
 
-3. Primeira subida (build, migrations, fixtures, collectstatic):
+3. Primeira subida (build, migrations, seed, collectstatic):
 
    ```bash
    make bootstrap
-   make createsuperuser
    ```
+
+   O seed (`scripts/seed_db.sh`, também disponível como `make seed`) carrega as fixtures essenciais, cria grupos e permissões e o usuário `admin` (senha `admin`, ou `SEED_ADMIN_PASSWORD`) com escritório padrão.
 
 4. Nas próximas vezes: `make up`, `make logs`, `make down`.
 

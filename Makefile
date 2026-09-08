@@ -2,7 +2,7 @@ COMPOSE = docker compose
 MANAGE = $(COMPOSE) run --rm web python manage.py
 
 .PHONY: help build up down restart logs ps shell psql migrate migrations collectstatic \
-        load_fixtures load_fixtures0 createsuperuser bootstrap test check \
+        seed load_fixtures load_fixtures0 createsuperuser bootstrap test check \
         set_env_development set_env_production check_env
 
 help:
@@ -53,9 +53,10 @@ migrations: check_env
 collectstatic: check_env
 	$(MANAGE) collectstatic --noinput
 
-load_fixtures0: check_env
-	$(MANAGE) loaddata auth_user template country state court_district email_template type_task_main office card line_chart doughnut_chart bar_chart
-	$(MANAGE) ezl_create_groups_and_permissions
+seed: check_env
+	$(COMPOSE) run --rm web scripts/seed_db.sh
+
+load_fixtures0: seed
 
 load_fixtures: check_env
 	$(MANAGE) ezl_create_groups_and_permissions
@@ -73,8 +74,7 @@ test: check_env
 # Primeira subida: constrói, sobe infraestrutura, migra, carrega fixtures e sobe tudo.
 bootstrap: check_env build
 	$(COMPOSE) up -d db redis queues
-	$(MANAGE) migrate --noinput
-	$(MAKE) load_fixtures0
+	$(MAKE) seed
 	$(MANAGE) collectstatic --noinput
 	$(COMPOSE) up -d
 	@echo "Pronto. Web: http://localhost:8000  nginx: http://localhost:8080  Mailpit: http://localhost:8026  Flower: http://localhost:5555"
