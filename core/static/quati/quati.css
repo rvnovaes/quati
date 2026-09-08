@@ -89,7 +89,7 @@ hr { border-color: var(--q-line) !important; }
 .top-left-part .logo { display: inline-flex !important; align-items: center; gap: 10px; text-decoration: none !important; line-height: 1; }
 .top-left-part .logo img.dark-logo, .top-left-part .logo img.light-logo { display: none !important; }
 .q-brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none !important; color: #F1ECE4; }
-.q-brand svg, .q-brand img { width: 30px; height: 30px; flex: none; display: block; }
+.q-brand svg, .q-brand img { width: 36px; height: 36px; flex: none; display: block; object-fit: contain; }
 .q-brand .q-brand-name { font: 700 20px/1 var(--q-display); letter-spacing: -.02em; color: #F1ECE4; text-transform: none !important; }
 .q-brand .q-brand-name small { display: block; font: 500 10px/1.2 var(--q-body); letter-spacing: .02em; opacity: .7; margin-top: 3px; }
 .navbar-top-links { display: flex !important; align-items: center; margin: 0 !important; }
@@ -344,7 +344,8 @@ table.dataTable.row-border tbody th, table.dataTable.row-border tbody td { borde
 .q-login-side h2 { font: 600 clamp(28px, 3.4vw, 42px)/1.08 var(--q-display) !important; letter-spacing: -.02em; margin: 0 0 14px !important; max-width: 14ch; color: #F1ECE4 !important; text-wrap: balance; }
 .q-login-side p { margin: 0; color: rgba(241, 236, 228, .75); max-width: 38ch; font-size: 15px; }
 .q-login-side footer { font-size: 12px; color: rgba(241, 236, 228, .55); }
-.q-login-side .q-tail { position: absolute; right: -90px; bottom: -120px; width: 400px; height: 400px; opacity: .9; z-index: 0; }
+.q-login-side .q-mascot { position: absolute; right: 4%; bottom: 0; width: 56%; max-width: 400px; height: auto; z-index: 0; filter: drop-shadow(0 12px 24px rgba(0,0,0,.35)); }
+.q-login-side > div { max-width: 62%; margin-bottom: 26vh; }
 .q-login-form { padding: 56px 64px; display: flex; flex-direction: column; justify-content: center; background: var(--q-card); }
 .q-login-form form { max-width: 420px; width: 100%; }
 .q-login-form h3 { font: 600 26px/1.15 var(--q-display) !important; margin: 0 0 6px !important; }
@@ -362,7 +363,7 @@ table.dataTable.row-border tbody th, table.dataTable.row-border tbody td { borde
 #recoverform { display: none; }
 @media (max-width: 900px) {
   .q-login-page { grid-template-columns: 1fr; }
-  .q-login-side { min-height: 300px; }
+  .q-login-side { min-height: 360px; } .q-login-side .q-mascot { width: 44%; right: 4%; bottom: 0; } .q-login-side > div { max-width: 55%; }
   .q-login-form { padding: 32px 24px; }
 }
 

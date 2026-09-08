@@ -1,13 +1,9 @@
+{% load static %}
 {% comment %}
-Marca do sistema. Para trocar o símbolo pelo logo definitivo do quati, substitua o <svg>
-abaixo por <img src="{% static 'img/quati-mark.svg' %}" alt=""> (ou .png) mantendo a classe q-brand.
+Marca do sistema (mascote do kit de identidade Quati + nome).
 Uso: {% include 'skeleton/includes/brand.html' with tagline=True %}
 {% endcomment %}
 <span class="q-brand">
-    <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false">
-        <circle cx="30" cy="28" r="20" fill="none" stroke="currentColor" stroke-width="7"/>
-        <path d="M40 42 C48 50, 54 58, 60 61" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round"/>
-        <path d="M44.5 46.5 l4 -4 M49.5 52 l4 -4 M54.5 57 l4 -4" stroke="#D8A21C" stroke-width="3.2" stroke-linecap="round"/>
-    </svg>
+    <img src="{% static 'img/quati-icon-96.png' %}" alt="" width="36" height="36">
     <span class="q-brand-name">Quati{% if tagline %}<small>logística jurídica</small>{% endif %}</span>
 </span>
