@@ -12,6 +12,8 @@
 #   SEED_ADMIN_PASSWORD  senha do administrador (padrão: admin; troque em produção)
 #   SEED_ADMIN_EMAIL     e-mail do administrador (padrão: contato@ezlawyer.com.br)
 #   SEED_SITE_DOMAIN     domínio do Site id=1 (padrão: localhost:8000)
+#   SEED_OFFICE_NAME     nome do escritório padrão criado se não houver nenhum (padrão: Escritório padrão)
+#   SEED_OFFICE_CNPJ     CNPJ do escritório padrão (padrão: 00.000.000/0001-91)
 #   SEED_SKIP_MIGRATE=1  não roda migrate
 set -euo pipefail
 
@@ -21,6 +23,8 @@ SEED_ADMIN_USER="${SEED_ADMIN_USER:-admin}"
 SEED_ADMIN_PASSWORD="${SEED_ADMIN_PASSWORD:-admin}"
 SEED_ADMIN_EMAIL="${SEED_ADMIN_EMAIL:-contato@ezlawyer.com.br}"
 SEED_SITE_DOMAIN="${SEED_SITE_DOMAIN:-localhost:8000}"
+SEED_OFFICE_NAME="${SEED_OFFICE_NAME:-Escritório padrão}"
+SEED_OFFICE_CNPJ="${SEED_OFFICE_CNPJ:-00.000.000/0001-91}"
 
 echo "==> Aguardando o banco de dados"
 for i in $(seq 1 30); do
@@ -45,7 +49,6 @@ python manage.py loaddata \
     court_district \
     email_template \
     type_task_main \
-    office \
     card line_chart doughnut_chart bar_chart
 
 echo "==> Criando grupos e permissões"
@@ -54,6 +57,7 @@ python manage.py ezl_create_groups_and_permissions
 echo "==> Configurando administrador, escritório padrão e Site"
 SEED_ADMIN_USER="$SEED_ADMIN_USER" SEED_ADMIN_PASSWORD="$SEED_ADMIN_PASSWORD" \
 SEED_ADMIN_EMAIL="$SEED_ADMIN_EMAIL" SEED_SITE_DOMAIN="$SEED_SITE_DOMAIN" \
+SEED_OFFICE_NAME="$SEED_OFFICE_NAME" SEED_OFFICE_CNPJ="$SEED_OFFICE_CNPJ" \
 python manage.py shell <<'PY'
 import os
 from django.contrib.auth.models import User
@@ -74,9 +78,10 @@ user.save()
 
 office = Office.objects.order_by('pk').first()
 if office is None:
+    office_name = os.environ['SEED_OFFICE_NAME']
     office = Office.objects.create(
-        legal_name='Escritório padrão', name='Escritório padrão', legal_type='J',
-        cpf_cnpj='00000000000191', create_user=user, is_active=True)
+        legal_name=office_name, name=office_name, legal_type='J',
+        cpf_cnpj=os.environ['SEED_OFFICE_CNPJ'], create_user=user, is_active=True)
 if hasattr(user, 'person'):
     OfficeMembership.objects.get_or_create(
         person=user.person, office=office,

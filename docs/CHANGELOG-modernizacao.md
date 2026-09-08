@@ -35,7 +35,7 @@ Bibliotecas removidas: django-material, django-codemirror-widget, django-file-fo
 
 O histórico de 494 migrations foi regenerado do zero (uma `0001_initial` por app, mais `task/0002_database_views` com as views SQL `dashboard_view` e `task_filter_view`). Motivo: a decisão de partir de banco novo, somada a 49 data migrations que importavam models reais e o Advwin, tornava a cadeia antiga inexecutável. Bancos antigos **não** podem ser migrados diretamente; seria preciso um dump/restore com `--fake-initial` e ajustes manuais.
 
-Fixtures carregadas pelo `make load_fixtures0`: `auth_user`, `template`, `country`, `state`, `court_district`, `email_template`, `type_task_main`, `office`, `card`, `line_chart`, `doughnut_chart`, `bar_chart`, além de `ezl_create_groups_and_permissions`.
+Fixtures carregadas pelo `make load_fixtures0`: `auth_user`, `template`, `country`, `state`, `court_district`, `email_template`, `type_task_main`, `card`, `line_chart`, `doughnut_chart`, `bar_chart`, além de `ezl_create_groups_and_permissions`.
 
 ## Ajustes de código relevantes
 

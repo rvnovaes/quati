@@ -268,7 +268,7 @@ def recalculate_amounts(old_amount, amount_to_pay, amount_to_receive, new_amount
     Este método recebe os dados da OS, e chama o método utilizado para recalcular os valor da tabela de preços,
     invertendo os valores a pagar e a receber, já que o concieto deles é invertido para a OS
     :param old_amount: Valor autal de delegação da OS
-    :param amount_to_pay: Valor atual a pagar (valor que será pago ao MTA pela execução do serviço)
+    :param amount_to_pay: Valor atual a pagar (valor que será pago ao contratante pela execução do serviço)
     :param amount_to_receive: Valor atual a receber (valor que será pago ao correspondente que executar o serviço)
     :param new_amount: Novo valor de delegação da OS
     :param rate_type_pay: tipo de correção a ser feita para o valor a pagar (PERCENT ou VALUE)
