@@ -372,20 +372,22 @@ table.dataTable.row-border tbody th, table.dataTable.row-border tbody td { borde
   .q-login-form { padding: 32px 24px; }
 }
 
-/* ---------- rodapé institucional (LabP²) ---------- */
-.q-footer { position: sticky; bottom: 0; z-index: 10; margin-top: auto; background: var(--q-terra); color: rgba(241, 236, 228, .75); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; padding: 12px 24px; font-size: 12px; }
+/* ---------- rodapé institucional (LabP²): fixo na base da janela ---------- */
+.q-footer { position: fixed; left: 0; right: 0; bottom: 0; z-index: 1020; background: var(--q-terra); color: rgba(241, 236, 228, .75); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; padding: 10px 24px; font-size: 12px; min-height: 56px; box-shadow: 0 -1px 0 rgba(255, 255, 255, .06); }
 .q-footer p { margin: 0; }
 .q-footer p a { color: #fff !important; font-weight: 600; text-decoration: none; }
 .q-footer p a:hover { text-decoration: underline; }
 .q-footer-logos { display: flex; align-items: center; gap: 20px; opacity: .75; transition: opacity .15s; }
 .q-footer-logos:hover { opacity: 1; }
 .q-footer-logos img { width: auto; display: block; }
-#page-wrapper { display: flex; flex-direction: column; min-height: calc(100vh - 60px) !important; padding-bottom: 0 !important; }
-#page-wrapper > .container-fluid { flex: 1 0 auto; width: 100%; }
-#page-wrapper > .q-footer { margin: 0; }
+/* espaço para o conteúdo não ficar escondido atrás do rodapé */
+#page-wrapper { padding-bottom: 76px !important; }
+.sidebar .sidebar-nav, .sidebar { padding-bottom: 60px !important; }
 body.q-popup .q-footer { display: none; }
-.q-login-page { grid-template-rows: 1fr auto; }
-.q-login-page > .q-footer { grid-column: 1 / -1; position: static; }
+body.q-popup #page-wrapper { padding-bottom: 0 !important; }
+.q-login-page { padding-bottom: 56px; }
+.q-login-page > .q-footer { grid-column: 1 / -1; }
+@media (max-width: 700px) { .q-footer { justify-content: center; text-align: center; } #page-wrapper, .q-login-page { padding-bottom: 96px !important; } }
 
 /* ---------- popup (páginas abertas em janela) ---------- */
 body.q-popup #page-wrapper { margin-left: 0 !important; }
