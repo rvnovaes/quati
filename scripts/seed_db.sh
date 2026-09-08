@@ -15,6 +15,7 @@
 #   SEED_OFFICE_NAME     nome do escritório padrão criado se não houver nenhum (padrão: Escritório padrão)
 #   SEED_OFFICE_CNPJ     CNPJ do escritório padrão (padrão: 00.000.000/0001-91)
 #   SEED_SKIP_MIGRATE=1  não roda migrate
+#   SEED_DEMO=1          cria também dados de demonstração (correspondentes, clientes, processos e OS)
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -62,7 +63,7 @@ python manage.py shell <<'PY'
 import os
 from django.contrib.auth.models import User
 from django.contrib.sites.models import Site
-from core.models import DefaultOffice, Office, OfficeMembership
+from core.models import CONTACT_MECHANISM_TYPE, ContactMechanismType, DefaultOffice, Office, OfficeMembership
 
 username = os.environ['SEED_ADMIN_USER']
 password = os.environ['SEED_ADMIN_PASSWORD']
@@ -88,6 +89,9 @@ if hasattr(user, 'person'):
         defaults={'create_user': user, 'is_active': True})
 DefaultOffice.objects.get_or_create(auth_user=user, defaults={'office': office, 'create_user': user})
 
+for pk, name in CONTACT_MECHANISM_TYPE:
+    ContactMechanismType.objects.get_or_create(pk=pk, defaults={'name': name.title(), 'create_user': user})
+
 site, _ = Site.objects.get_or_create(pk=1, defaults={'domain': os.environ['SEED_SITE_DOMAIN'], 'name': 'EZL'})
 site.domain = os.environ['SEED_SITE_DOMAIN']
 site.name = 'EZL'
@@ -95,5 +99,10 @@ site.save()
 
 print(f"Administrador: {username} ({'criado' if created else 'atualizado'}) | escritório padrão: {office.legal_name} | site: {site.domain}")
 PY
+
+if [ "${SEED_DEMO:-0}" = "1" ]; then
+    echo "==> Criando dados de demonstração"
+    python manage.py seed_demo
+fi
 
 echo "==> Seed concluído."

@@ -2,7 +2,7 @@ COMPOSE = docker compose
 MANAGE = $(COMPOSE) run --rm web python manage.py
 
 .PHONY: help build up down restart logs ps shell psql migrate migrations collectstatic \
-        seed load_fixtures load_fixtures0 createsuperuser bootstrap test check \
+        seed seed_demo load_fixtures load_fixtures0 createsuperuser bootstrap test check \
         set_env_development set_env_production check_env
 
 help:
@@ -55,6 +55,9 @@ collectstatic: check_env
 
 seed: check_env
 	$(COMPOSE) run --rm web scripts/seed_db.sh
+
+seed_demo: check_env
+	$(COMPOSE) run --rm web python manage.py seed_demo
 
 load_fixtures0: seed
 

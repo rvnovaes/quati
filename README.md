@@ -28,7 +28,7 @@ Como rodar
    make bootstrap
    ```
 
-   O seed (`scripts/seed_db.sh`, também disponível como `make seed`) carrega as fixtures essenciais, cria grupos e permissões e o usuário `admin` (senha `admin`, ou `SEED_ADMIN_PASSWORD`) com escritório padrão.
+   O seed (`scripts/seed_db.sh`, também disponível como `make seed`) carrega as fixtures essenciais, cria grupos e permissões e o usuário `admin` (senha `admin`, ou `SEED_ADMIN_PASSWORD`) com escritório padrão. Para um ambiente de demonstração, `make seed_demo` (ou `SEED_DEMO=1` no seed) cria correspondentes, solicitantes, clientes, processos e 19 OS distribuídas pelos status, com prazos nos próximos dias. Usuários de demonstração (`ana.ribeiro`, `carlos.mota`, `juliana.ferraz`, `marcos.lima`, `beatriz.campos`, `rafael.nunes`) usam a senha `quati123`.
 
 4. Nas próximas vezes: `make up`, `make logs`, `make down`.
 

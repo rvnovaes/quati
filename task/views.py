@@ -919,12 +919,12 @@ class DashboardView(CustomLoginRequiredView, TemplateView):
                 continue
             flow.append(dict(item, hint=self.FLOW_HINTS[status],
                              css='q-done' if status is TaskStatus.FINISHED else 'q-s{}'.format(min(len(flow), 3)),
-                             dom_id=item['status'].replace(' ', '').lower()))
+                             dom_id=item['status'].replace(' ', '_').lower()))
         for status, css in self.SIDE_CHIP_CLASS.items():
             item = by_name.get(status.name)
             if not item or (cards_to_show and status.value not in cards_to_show):
                 continue
-            side.append(dict(item, css=css, dom_id=item['status'].replace(' ', '').lower()))
+            side.append(dict(item, css=css, dom_id=item['status'].replace(' ', '_').lower()))
         return {'flow_statuses': flow, 'side_statuses': side}
 
     def get_deadlines_context(self, person, checker):
