@@ -15,7 +15,7 @@
   }
 
   function apply(theme) {
-    root.setAttribute('data-theme', theme);
+    root.setAttribute('data-quati-theme', theme);
     try { localStorage.setItem(KEY, theme); } catch (e) { /* ignora */ }
     var toggles = document.querySelectorAll('.q-theme-toggle');
     for (var i = 0; i < toggles.length; i++) {

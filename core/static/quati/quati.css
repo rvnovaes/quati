@@ -2,7 +2,7 @@
    Quati — tema visual do Easy Lawyer
    Carregado por último: sobrescreve o tema Ample (style.css / colors/ezl.css)
    sem alterar a estrutura HTML das telas. Dois temas: claro (padrão) e escuro,
-   selecionados por [data-theme] no <html> (ver quati/theme.js) ou pelo sistema.
+   selecionados por [data-quati-theme] no <html> (ver quati/theme.js) ou pelo sistema.
    ========================================================================== */
 
 :root {
@@ -39,7 +39,7 @@
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
+  :root:not([data-quati-theme="light"]) {
     --q-paper: #17110E; --q-card: #221A15; --q-card-2: #2A201A;
     --q-ink: #F1ECE4; --q-ink-2: #C4B9AD; --q-ink-3: #8C8178;
     --q-line: #35291F; --q-line-2: #4A3B2E;
@@ -49,7 +49,7 @@
     color-scheme: dark;
   }
 }
-:root[data-theme="dark"] {
+:root[data-quati-theme="dark"] {
   --q-paper: #17110E; --q-card: #221A15; --q-card-2: #2A201A;
   --q-ink: #F1ECE4; --q-ink-2: #C4B9AD; --q-ink-3: #8C8178;
   --q-line: #35291F; --q-line-2: #4A3B2E;
@@ -108,10 +108,10 @@ hr { border-color: var(--q-line) !important; }
 .navbar-top-links .notify .heartbit { border-color: var(--q-jatoba) !important; }
 .q-avatar { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--q-capim); color: var(--q-capim-ink); font: 700 12px var(--q-display); vertical-align: middle; margin-right: 8px; }
 .q-theme-toggle .q-sun, .q-theme-toggle .q-moon { display: none; }
-:root[data-theme="dark"] .q-theme-toggle .q-sun { display: inline; }
-:root[data-theme="light"] .q-theme-toggle .q-moon { display: inline; }
-:root:not([data-theme]) .q-theme-toggle .q-moon { display: inline; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme]) .q-theme-toggle .q-moon { display: none; } :root:not([data-theme]) .q-theme-toggle .q-sun { display: inline; } }
+:root[data-quati-theme="dark"] .q-theme-toggle .q-sun { display: inline; }
+:root[data-quati-theme="light"] .q-theme-toggle .q-moon { display: inline; }
+:root:not([data-quati-theme]) .q-theme-toggle .q-moon { display: inline; }
+@media (prefers-color-scheme: dark) { :root:not([data-quati-theme]) .q-theme-toggle .q-moon { display: none; } :root:not([data-quati-theme]) .q-theme-toggle .q-sun { display: inline; } }
 
 /* dropdowns */
 .dropdown-menu { background: var(--q-card) !important; border: 1px solid var(--q-line-2) !important; box-shadow: var(--q-shadow) !important; border-radius: 8px !important; padding: 6px !important; }

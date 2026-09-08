@@ -16,7 +16,7 @@
     <title>{{ title_page|default:"Quati" }}</title>
     <script>
         /* aplica o tema salvo antes do primeiro paint (ver quati/theme.js) */
-        (function () { try { var t = localStorage.getItem('quati-theme'); if (t === 'light' || t === 'dark') { document.documentElement.setAttribute('data-theme', t); } } catch (e) {} })();
+        (function () { try { var t = localStorage.getItem('quati-theme'); if (t === 'light' || t === 'dark') { document.documentElement.setAttribute('data-quati-theme', t); } } catch (e) {} })();
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
