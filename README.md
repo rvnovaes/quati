@@ -28,7 +28,7 @@ Como rodar
    make bootstrap
    ```
 
-   O seed (`scripts/seed_db.sh`, também disponível como `make seed`) carrega as fixtures essenciais, cria grupos e permissões e o usuário `admin` (senha `admin`, ou `SEED_ADMIN_PASSWORD`) com escritório padrão. Para um ambiente de demonstração, `make seed_demo` (ou `SEED_DEMO=1` no seed) cria correspondentes, solicitantes, clientes, processos e 19 OS distribuídas pelos status, com prazos nos próximos dias. Usuários de demonstração (`ana.ribeiro`, `carlos.mota`, `juliana.ferraz`, `marcos.lima`, `beatriz.campos`, `rafael.nunes`) usam a senha `quati123`.
+   O seed (`scripts/seed_db.sh`, também disponível como `make seed`) carrega as fixtures essenciais, cria grupos e permissões e o usuário `admin` (senha `admin`, ou `SEED_ADMIN_PASSWORD`) com escritório padrão. O seed também carrega as 6.716 cidades brasileiras (`manage.py seed_cities`). Para um ambiente de demonstração, `make seed_demo` (ou `SEED_DEMO=1` no seed) povoa todos os cadastros: correspondentes, solicitantes, supervisor, financeiro, clientes com endereços e contatos, empresa e preposto, instâncias, órgãos, varas, complementos de comarca, centros de custo, tipos de movimentação, políticas e tabelas de preço, equipes, questionários, regras de anexo, um escritório correspondente em rede (`lima.souza`), pastas, processos e 40 OS distribuídas pelos status, com prazos nos próximos dias, histórico de 5 meses para os relatórios e 3 OS delegadas ao escritório correspondente. Usuários de demonstração (`ana.ribeiro`, `carlos.mota`, `juliana.ferraz`, `marcos.lima`, `beatriz.campos`, `rafael.nunes`, `helena.prado`, `otavio.reis`, `lucas.andrade`, `lima.souza`, `paulo.souza`) usam a senha `quati123`.
 
 4. Nas próximas vezes: `make up`, `make logs`, `make down`.
 

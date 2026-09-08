@@ -52,6 +52,9 @@ python manage.py loaddata \
     type_task_main \
     card line_chart doughnut_chart bar_chart
 
+echo "==> Carregando cidades"
+python manage.py seed_cities
+
 echo "==> Criando grupos e permissões"
 python manage.py ezl_create_groups_and_permissions
 
@@ -63,7 +66,7 @@ python manage.py shell <<'PY'
 import os
 from django.contrib.auth.models import User
 from django.contrib.sites.models import Site
-from core.models import CONTACT_MECHANISM_TYPE, ContactMechanismType, DefaultOffice, Office, OfficeMembership
+from core.models import CONTACT_MECHANISM_TYPE, AddressType, ContactMechanismType, DefaultOffice, Office, OfficeMembership
 
 username = os.environ['SEED_ADMIN_USER']
 password = os.environ['SEED_ADMIN_PASSWORD']
@@ -91,6 +94,8 @@ DefaultOffice.objects.get_or_create(auth_user=user, defaults={'office': office, 
 
 for pk, name in CONTACT_MECHANISM_TYPE:
     ContactMechanismType.objects.get_or_create(pk=pk, defaults={'name': name.title(), 'create_user': user})
+for name in ('Comercial', 'Residencial', 'Correspondência'):
+    AddressType.objects.get_or_create(name=name, defaults={'create_user': user})
 
 site, _ = Site.objects.get_or_create(pk=1, defaults={'domain': os.environ['SEED_SITE_DOMAIN'], 'name': 'EZL'})
 site.domain = os.environ['SEED_SITE_DOMAIN']
