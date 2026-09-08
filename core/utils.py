@@ -1,5 +1,4 @@
 from enum import Enum
-from config.config import get_parser
 from django.db.models import Q
 from django.apps import apps
 from django.forms.models import model_to_dict
@@ -14,20 +13,6 @@ from decimal import Decimal
 EZL_LOGGER = logging.getLogger('ezl')
 
 
-def check_environ(f):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        parser = get_parser()
-        source = dict(parser.items('etl'))
-        connection_name = source['connection_name']
-        if connection_name == 'advwin_connection' and os.environ[
-                'ENV'] == 'development':
-            return 'NAO E PERMITIDO EXECUTAR ESTA OPERACAO NO BANCO ADVWIN DE PRODUCAO COM O AMBIENTE DEVELOPMENT'
-        return f(*args, **kwargs)
-
-    return wrapper
-
-
 # enumerador usado para integracao entre sistemas
 class LegacySystem(Enum):
     ADVWIN = "Advwin"
@@ -37,26 +22,22 @@ class LegacySystem(Enum):
 
 def filter_valid_choice_form(queryset):
     """
-    Este metedo e responsavel por remover os registros invalidos
-    gerados pela ETL e é utilizado nos forms na chamada do queryset do
-    ModelChoiceField.
+    Remove o registro "inválido" (criado pelas importações antigas) de um queryset usado em
+    ModelChoiceField. Não executa consulta no momento da chamada: a exclusão é feita de forma
+    preguiçosa, para não acessar o banco durante o import dos módulos de forms.
 
     :return: Retorna o queryset passado como parametro sem o registro invalido
     :rtype: QuerySet
     """
-    try:
-        model = queryset.model
-        class_verbose_name_invalid = model._meta.verbose_name.upper(
-        ) + '-INVÁLIDO'
-        try:
-            invalid_registry = queryset.filter(
-                name=class_verbose_name_invalid).first()
-        except:
-            invalid_registry = queryset.filter(
-                legacy_code='REGISTRO-INVÁLIDO').first()
-        return queryset.filter(~Q(pk=invalid_registry.pk))
-    except:
-        return queryset
+    model = queryset.model
+    class_verbose_name_invalid = model._meta.verbose_name.upper() + '-INVÁLIDO'
+    field_names = {f.name for f in model._meta.get_fields()}
+    if 'name' in field_names:
+        return queryset.exclude(name=class_verbose_name_invalid)
+    if 'legacy_code' in field_names:
+        return queryset.exclude(legacy_code='REGISTRO-INVÁLIDO')
+    return queryset
+
 
 def get_admin_setting(model, setting_name):
     # busca o valor da configuracao do sistema de um campo específico passado como parametro
