@@ -74,7 +74,7 @@ def get_file_content_copy(filefield):
 def task_send_mail(instance, number, project_link, short_message, custom_text,
                    mail_list):
     mail = SendMail()
-    mail.subject = 'Easy Lawyer - OS {} - {} - Prazo: {} - {}'.format(
+    mail.subject = 'Quati - OS {} - {} - Prazo: {} - {}'.format(
         number,
         str(instance.type_task).title(),
         instance.final_deadline_date.strftime('%d/%m/%Y'),

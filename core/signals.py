@@ -139,7 +139,7 @@ def send_invite_email(instance, sender, **kwargs):
     if hasattr(instance, '_InviteCreateView__host'):
         project_link = instance._InviteCreateView__host
     mail = SendMail()
-    mail.subject = 'Easy Lawyer - Convite para cadastro'
+    mail.subject = 'Quati - Convite para cadastro'
     mail.message = render_to_string(
         'core/mail/base.html', {
             'server': project_link,

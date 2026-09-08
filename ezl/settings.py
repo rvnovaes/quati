@@ -1,5 +1,5 @@
 """
-Configurações do Easy Lawyer.
+Configurações do Quati.
 
 Todas as opções sensíveis ou dependentes de ambiente vêm de variáveis de ambiente
 (ver .env.example). Os valores padrão servem apenas para desenvolvimento local.
@@ -63,7 +63,7 @@ CSRF_TRUSTED_ORIGINS = env_list('CSRF_TRUSTED_ORIGINS', 'http://localhost:8000,h
 CORS_ORIGIN_ALLOW_ALL = True
 INTERNAL_IPS = env_list('INTERNAL_IPS', '127.0.0.1')
 
-PROJECT_NAME = env('PROJECT_NAME', 'Easy Lawyer')
+PROJECT_NAME = env('PROJECT_NAME', 'Quati')
 PROJECT_LINK = env('PROJECT_LINK', 'http://localhost:8000')
 WORKFLOW_URL_EMAIL = env('WORKFLOW_EMAIL', PROJECT_LINK)
 
@@ -305,7 +305,7 @@ EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', '')
 EMAIL_USE_TLS = env_bool('EMAIL_USE_TLS', False)
 EMAIL_USE_SSL = env_bool('EMAIL_USE_SSL', False)
 EMAIL_TIMEOUT = env_int('EMAIL_TIMEOUT', 30)
-DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', 'Easy Lawyer <contato@ezlawyer.com.br>')
+DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', 'Quati <contato@ezlawyer.com.br>')
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
 # Quando definido, todo e-mail é redirecionado para este endereço (útil em homologação)
 DEFAULT_TO_EMAIL = env('DEFAULT_TO_EMAIL') or None

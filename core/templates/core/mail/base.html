@@ -1,11 +1,11 @@
 {% extends 'mail/base.html' %}
 {% load static %}
 {% block content %}
-    <p>Você foi convidado por {{ invite.person }} para se cadastrar no Easy Lawyer!</p>
+    <p>Você foi convidado por {{ invite.person }} para se cadastrar no Quati!</p>
 
     <p>Para aceitar o convite e se cadastrar no ambiente,
     <a href="{{ server }}{% url 'register_user' %}?invite_code={{ invite.invite_code }}">clique aqui</a>.
 
-    <p>Caso você já possua conta no Easy Lawyer, basta acessar o sistema normalmente que este convite estará no
+    <p>Caso você já possua conta no Quati, basta acessar o sistema normalmente que este convite estará no
         <a href="{{ server }}{% url 'start_user' %}">seu perfil</a>. </p>
 {% endblock content %}

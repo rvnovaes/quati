@@ -1,7 +1,7 @@
-Easy Lawyer
+Quati
 ===========
 
-O Easy Lawyer (EZL) é um sistema web de gestão de logística jurídica que permite o controle de processos desde a prestação do serviço até o seu efetivo pagamento. O solicitante cadastra as providências que precisam ser cumpridas e o sistema identifica o melhor profissional para cumpri-las, considerando proximidade, preço e avaliação. O correspondente é avisado por e-mail e pode aceitar ou recusar a providência.
+O Quati é um sistema web de gestão de logística jurídica que permite o controle de processos desde a prestação do serviço até o seu efetivo pagamento. O solicitante cadastra as providências que precisam ser cumpridas e o sistema identifica o melhor profissional para cumpri-las, considerando proximidade, preço e avaliação. O correspondente é avisado por e-mail e pode aceitar ou recusar a providência.
 
 Stack
 -----

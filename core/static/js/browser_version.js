@@ -16,10 +16,10 @@ function getMessage (name, version){
         'suportar novos recursos. É recomendado que você mantenha seu navegador sempre na versão mais atual.</p>';
 
     if (! acceptedBrowsers[name]) {
-        message = '<p><b>Esse navegador é incompatível com o Easy Lawyer. Os navegadores compatíveis são:</b></p>' +
+        message = '<p><b>Esse navegador é incompatível com o Quati. Os navegadores compatíveis são:</b></p>' +
         browserVersions.outerHTML;
     } else if (version < acceptedBrowsers[name]) {
-        message = '<p><b>A versão ' + version + ' desse navegador não é compatível com o Easy Lawyer. ' +
+        message = '<p><b>A versão ' + version + ' desse navegador não é compatível com o Quati. ' +
             'Para usar o sistema a versão deve ser atualizada para ' + acceptedBrowsers[name] + ' ou posterior.</b></p>' +
             errorDetail;
     }
