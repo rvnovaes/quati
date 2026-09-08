@@ -1,0 +1,23 @@
+{% load static %}
+{% comment %}
+Rodapé institucional: crédito ao LabP² e logos (brancos, sobre fundo escuro) do LabP²,
+da Faculdade de Direito e da UFMG. Mesmo conteúdo do rodapé do Gestão Legal.
+{% endcomment %}
+<footer class="q-footer">
+    <p>
+        Desenvolvido por
+        <a href="https://labp2.direito.ufmg.br/" target="_blank" rel="noopener noreferrer">LabP²</a>
+        · Laboratório de Tecnologias Públicas para o Setor Público · Faculdade de Direito da UFMG
+    </p>
+    <div class="q-footer-logos">
+        <a href="https://labp2.direito.ufmg.br/" target="_blank" rel="noopener noreferrer" title="LabP²">
+            <img src="{% static 'img/logos/labp2-branco.png' %}" alt="LabP²" style="height:36px">
+        </a>
+        <a href="https://www.direito.ufmg.br/" target="_blank" rel="noopener noreferrer" title="Faculdade de Direito da UFMG">
+            <img src="{% static 'img/logos/fdufmg-branco.png' %}" alt="Faculdade de Direito da UFMG" style="height:32px">
+        </a>
+        <a href="https://ufmg.br/" target="_blank" rel="noopener noreferrer" title="UFMG">
+            <img src="{% static 'img/logos/ufmg-branco.png' %}" alt="UFMG" style="height:24px">
+        </a>
+    </div>
+</footer>

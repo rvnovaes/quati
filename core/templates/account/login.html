@@ -29,7 +29,6 @@
             <h2>Toda providência chega ao destino.</h2>
             <p>Cadastre a ordem de serviço, delegue ao correspondente mais próximo e acompanhe o cumprimento até o pagamento.</p>
         </div>
-        <footer>Quati · Belo Horizonte</footer>
         <img class="q-mascot" src="{% static 'img/quati-mascote.png' %}" alt="Mascote do Quati, um quati de terno com pasta" width="640" height="615">
     </aside>
 
@@ -79,6 +78,7 @@
             <div class="q-signup"><a href="javascript:void(0)" id="to-login">Voltar para o login</a></div>
         </form>
     </main>
+    {% include 'skeleton/includes/footer_labp2.html' %}
 
 <script src="{% static 'skeleton/plugins/bower_components/jquery/dist/jquery.min.js' %}?rev={{request.REVIEW}}"></script>
 <script src="{% static 'skeleton/bootstrap/dist/js/bootstrap.min.js' %}?rev={{request.REVIEW}}"></script>
