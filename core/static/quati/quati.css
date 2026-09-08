@@ -349,8 +349,8 @@ table.dataTable.row-border tbody th, table.dataTable.row-border tbody td { borde
 .q-login-side h2 { font: 600 clamp(28px, 3.4vw, 42px)/1.08 var(--q-display) !important; letter-spacing: -.02em; margin: 0 0 14px !important; max-width: 14ch; color: #F1ECE4 !important; text-wrap: balance; }
 .q-login-side p { margin: 0; color: rgba(241, 236, 228, .75); max-width: 38ch; font-size: 15px; }
 .q-login-side footer { font-size: 12px; color: rgba(241, 236, 228, .55); }
-.q-login-side .q-mascot { position: absolute; right: 4%; bottom: 0; width: 56%; max-width: 400px; height: auto; z-index: 0; filter: drop-shadow(0 12px 24px rgba(0,0,0,.35)); }
-.q-login-side > div { max-width: 62%; margin-bottom: 26vh; }
+.q-login-side .q-mascot { position: absolute; right: 4%; bottom: 0; height: 44vh; max-height: 420px; width: auto; max-width: 62%; object-fit: contain; object-position: right bottom; z-index: 0; filter: drop-shadow(0 12px 24px rgba(0,0,0,.35)); }
+.q-login-side > div { max-width: 70%; margin-bottom: 46vh; }
 .q-login-form { padding: 56px 64px; display: flex; flex-direction: column; justify-content: center; background: var(--q-card); }
 .q-login-form form { max-width: 420px; width: 100%; }
 .q-login-form h3 { font: 600 26px/1.15 var(--q-display) !important; margin: 0 0 6px !important; }
