@@ -209,7 +209,8 @@ class MDSelect(ModelSelect2):
             )
         }
         js = ('admin/js/vendor/select2/select2.full.js',
-              'autocomplete_light/autocomplete_light.js',
+              # cópia patchada (inicializa no document.ready); nome próprio evita cache do arquivo antigo
+              'autocomplete_light/ezl_autocomplete_light.js',
               'autocomplete_light/select2.js',
               'autocomplete_light/i18n/pt-BR.js',
               )
