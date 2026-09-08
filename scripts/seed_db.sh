@@ -10,7 +10,7 @@
 # Variáveis opcionais:
 #   SEED_ADMIN_USER      usuário administrador (padrão: admin)
 #   SEED_ADMIN_PASSWORD  senha do administrador (padrão: admin; troque em produção)
-#   SEED_ADMIN_EMAIL     e-mail do administrador (padrão: contato@ezlawyer.com.br)
+#   SEED_ADMIN_EMAIL     e-mail do administrador (padrão: quati@labp2.direito.ufmg.br)
 #   SEED_SITE_DOMAIN     domínio do Site id=1 (padrão: localhost:8000)
 #   SEED_OFFICE_NAME     nome do escritório padrão criado se não houver nenhum (padrão: Escritório padrão)
 #   SEED_OFFICE_CNPJ     CNPJ do escritório padrão (padrão: 00.000.000/0001-91)
@@ -21,7 +21,7 @@ cd "$(dirname "$0")/.."
 
 SEED_ADMIN_USER="${SEED_ADMIN_USER:-admin}"
 SEED_ADMIN_PASSWORD="${SEED_ADMIN_PASSWORD:-admin}"
-SEED_ADMIN_EMAIL="${SEED_ADMIN_EMAIL:-contato@ezlawyer.com.br}"
+SEED_ADMIN_EMAIL="${SEED_ADMIN_EMAIL:-quati@labp2.direito.ufmg.br}"
 SEED_SITE_DOMAIN="${SEED_SITE_DOMAIN:-localhost:8000}"
 SEED_OFFICE_NAME="${SEED_OFFICE_NAME:-Escritório padrão}"
 SEED_OFFICE_CNPJ="${SEED_OFFICE_CNPJ:-00.000.000/0001-91}"

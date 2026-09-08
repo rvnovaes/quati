@@ -305,7 +305,7 @@ EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', '')
 EMAIL_USE_TLS = env_bool('EMAIL_USE_TLS', False)
 EMAIL_USE_SSL = env_bool('EMAIL_USE_SSL', False)
 EMAIL_TIMEOUT = env_int('EMAIL_TIMEOUT', 30)
-DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', 'Quati <contato@ezlawyer.com.br>')
+DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', 'Quati <quati@labp2.direito.ufmg.br>')
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
 # Quando definido, todo e-mail é redirecionado para este endereço (útil em homologação)
 DEFAULT_TO_EMAIL = env('DEFAULT_TO_EMAIL') or None
