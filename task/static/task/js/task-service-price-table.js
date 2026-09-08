@@ -261,16 +261,6 @@ class TaskDetailServicePriceTable extends TaskServicePriceTable {
     this.csrfToken = parentInstance.csrfToken;
   }
 
-  setBillingItem() {
-    this.billing.item =
-      {
-        task_id: this.taskId,
-        service_price_table_id: this.priceSelected.id,
-        name: ' Para ' + this.officeToDelegateName,
-        value: Number(this.priceDefined).toFixed(2).replace('.', '')
-      };
-  }
-
   handle() {
     return new Promise((resolve) => {
       // Este implementacao esta atrelada ao form do task-detail
@@ -296,8 +286,11 @@ class TaskDetailServicePriceTable extends TaskServicePriceTable {
           .appendTo('#task_detail');                           
         if (this.priceSelected.policy_price.billing_moment === 'PRE_PAID') {
           this.hideModal();
-          this.setBillingItem()
-          this.billing.createCharge(this.csrfToken)
+          swal({
+            type: 'warning',
+            title: 'Pagamento antecipado indisponível',
+            html: '<h4>A integração de pagamento está desativada. Escolha um preço com cobrança pós-paga.</h4>'
+          });
         } else {
           swal({
             title: 'Delegando',

@@ -63,10 +63,8 @@ class TaskDetail {
     }
 
     checkPaymentPending() {
-        if (this.chargeId) {
-            this.billing.checkout.chargeId = this.chargeId;
-            this.billing.checkout.getPaymentStatus();
-        }
+        // Integração de pagamento removida (Gerencianet). Nada a verificar.
+        return;
     }
 
     setExecutionDateRequire(status) {

@@ -75,7 +75,7 @@ class Charge(Audit):
 
 
 class ChargeItem(Audit):
-    charge = models.ForeignKey(Charge, verbose_name='Transacao', related_name='items', blank=True, null=True)
+    charge = models.ForeignKey(Charge, verbose_name='Transacao', related_name='items', blank=True, null=True, on_delete=models.PROTECT)
     name = models.CharField(verbose_name='Item', max_length=255)
     value = models.IntegerField(verbose_name='Valor')
     amount = models.IntegerField(verbose_name='Quantidade')
@@ -114,7 +114,7 @@ class BillingDetails(Audit, OfficeMixin):
         verbose_name='Telefone',
         max_length=15
     )
-    billing_address = models.ForeignKey(Address, verbose_name='Endereço de cobrança')
+    billing_address = models.ForeignKey(Address, verbose_name='Endereço de cobrança', on_delete=models.PROTECT)
 
     class Meta:
         ordering = ['office', 'card_name']
