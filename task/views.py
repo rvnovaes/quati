@@ -225,8 +225,9 @@ class TaskBulkCreateView(AuditFormMixin, CreateView):
             ret = {'status': 'Ok', 'task_id': task.id, 'task_number': task.task_number}
             return JsonResponse(ret, status=status)
         except Exception as e:
+            logger.exception('Erro ao criar OS')
             status = 500
-            ret = {'status': 'error', 'error': e.messages}
+            ret = {'status': 'error', 'error': getattr(e, 'messages', [str(e)])}
             return JsonResponse(ret, status=status)
 
     def form_invalid(self, form):

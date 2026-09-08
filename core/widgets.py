@@ -200,19 +200,18 @@ class MDDateTimeRangeFilter(RangeFilter):
 class MDSelect(ModelSelect2):
 
     class Media:
+        # Assets do django-autocomplete-light >= 3.9 (select2 vem do admin do Django)
         extend = False
         css = {
             'all': (
-                'autocomplete_light/vendor/select2/dist/css/select2.css',
+                'admin/css/vendor/select2/select2.css',
                 'autocomplete_light/select2.css',
-                'select2.css'
             )
         }
-        js = ('autocomplete_light/jquery.init.js',
-              'autocomplete_light/vendor/select2/dist/js/select2.full.js',
-              'autocomplete_light/vendor/select2/dist/js/i18n/pt-BR.js',
-              'autocomplete_light/autocomplete.init.js',
+        js = ('admin/js/vendor/select2/select2.full.js',
+              'autocomplete_light/autocomplete_light.js',
               'autocomplete_light/select2.js',
+              'autocomplete_light/i18n/pt-BR.js',
               )
 
     def build_attrs(self, *args, **kwargs):

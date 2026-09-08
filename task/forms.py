@@ -93,7 +93,8 @@ class TaskForm(BaseForm):
     def clean(self):
         super().clean()
         office = self.cleaned_data.get('office')
-        if not validate_final_deadline_date(self.cleaned_data.get('final_deadline_date'), office):
+        final_deadline_date = self.cleaned_data.get('final_deadline_date')
+        if office and final_deadline_date and not validate_final_deadline_date(final_deadline_date, office):
             min_hour_os = get_template_value_value(office, TemplateKeys.MIN_HOUR_OS.name)
             msg = 'O prazo de cumprimento da OS foi configurado para não poder ser inferior à {} hora(s).'.format(min_hour_os)
             self.add_error('final_deadline_date', forms.ValidationError(msg))
