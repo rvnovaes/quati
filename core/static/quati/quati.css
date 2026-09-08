@@ -84,7 +84,8 @@ hr { border-color: var(--q-line) !important; }
 /* ---------- barra superior ---------- */
 .navbar-default, .navbar-header, .navbar-static-top { background: var(--q-card) !important; border-color: var(--q-line) !important; box-shadow: none !important; }
 .navbar-static-top.m-b-0 { border-bottom: 1px solid var(--q-line) !important; }
-.navbar-header { display: flex; align-items: center; height: 60px; }
+.navbar-header { display: flex; align-items: center; height: 60px; width: 100%; float: none !important; }
+.navbar-top-links.navbar-right { margin-left: auto !important; float: none !important; padding-right: 8px; }
 .top-left-part { width: 232px !important; background: var(--q-terra) !important; height: 60px; display: flex; align-items: center; padding: 0 16px !important; text-align: left !important; }
 .top-left-part .logo { display: inline-flex !important; align-items: center; gap: 10px; text-decoration: none !important; line-height: 1; }
 .top-left-part .logo img.dark-logo, .top-left-part .logo img.light-logo { display: none !important; }
