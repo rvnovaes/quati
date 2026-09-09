@@ -1,158 +1,125 @@
-from django.contrib.auth.models import User, Group
-# from django.core.files.uploadedfile import SimpleUploadedFile
+import pytest
+from datetime import timedelta
+from uuid import uuid4
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
-from django.test import TestCase
 from django.utils import timezone
-
-from model_bakery import baker as mommy
-
 from core.models import Person
-from lawsuit.models import Movement
-from task.models import TypeTask, Task, Ecm, TaskHistory
+from task.models import Ecm, Task, TaskStatus
 from task.forms import TaskForm, TaskDetailForm
+from tests.support import OfficeTestCase
 
-class TaskTest(TestCase):
+
+class TaskTest(OfficeTestCase):
     def setUp(self):
-        User.objects.create_user(username='username', password='password')
-        self.client.login(username='username', password='password')
-
-        self.requester_group, nil = \
-            Group.objects.get_or_create(name=Person.REQUESTER_GROUP)
-
-        self.requester_user = User.objects.create(username='advogado-01')
-        self.requester_user.groups.add(self.requester_group)
-
-        self.correspondent_group, nil = \
-            Group.objects.get_or_create(name=Person.CORRESPONDENT_GROUP)
-
-        self.correspondent_user = User.objects.create(username='correspondente-01')
-        self.correspondent_user.groups.add(self.correspondent_group)
+        self.setup_office()
+        from django.contrib.auth.models import Group
+        self.user.groups.add(Group.objects.get(
+            name=f"{Person.REQUESTER_GROUP}-{self.office.pk}"))
 
     def test_model(self):
-        # mommy deixa as coisas bem mais faaceis
-        c_inst = mommy.make(Task)
-        self.assertTrue(isinstance(c_inst, Task))
+        task = self.make_task()
+        task.refresh_from_db()
+        self.assertTrue(task.task_number)
+        self.assertEqual(task.office, self.office)
+        self.assertEqual(task.movement, self.movement)
 
     def test_valid_TaskForm(self):
-        movement = mommy.make(Movement).id
-
-        type_task = mommy.make(TypeTask).id
-        delegation_date = timezone.now()
-        final_deadline_date = timezone.now()
-
-        description = """
-         Segundo o cliente ainda há três parcelas das cinco pactuadas no acordo. O processo foi
-         remetido ao arquivo geral. Pedi que o correspondente retire extrato para instruir nosso
-         pedido de desarquivamento e expedição de alvará, execução do saldo remanescente se for o
-         caso. -- em 19/05/2016 11:14:43 por Aramalho -> Aguardando retorno do correspondente com o
-         extrato da conta judicial. -- em 23/05/2016 11:10:54 por Aramalho -> Finalmente a
-         secretaria nos oportunizou consulta aos autos e verificamos que foram expedidos dois
-         alvarás: (i) 24.07.2015, referente à 1ª e 2ª parcelas, fls. 81 e (ii) 22.09.2015,
-         referente às parcelas 3, 4 e 5, fls. 96. INFORMADO AO CLIENTE - Aguardar retorno. -- em
-         31/05/2016 15:22:50 por Aramalho -> Petição feita - Acompanhar levantamento. -- em
-         30/06/2016 14:24:14 por Aramalho -> Autos conclusos para apreciação da nossa petição. --
-         em 02/08/2016 12:55:59 por Aramalho -> Autos conclusos para aprecisação da nossa petição.
-         *** Prazo repassado de ANDRE CHEREM RAMALHO para ADRIANE GONÇALVES DE SOUSA por Aramalho
-         em 28/11/2016 11:28:46 -- em 07/12/2016 15:30:24 por Agsousa -> Autos permanecem conclusos
-          -- em 21/12/2016 13:31:36 por Agsousa -> Autos permanecem conclusos desde 07/06/2016 --
-          em 25/01/2017 14:04:55 por Agsousa -> Autos permanecem conclusos -- em
-          22/02/2017 14:17:27
-          por Agsousa -> Autos permanecem conclusos -- em 21/03/2017 18:22:52 por Agsousa -> Autos
-          permanecem conclusos *** Prazo repassado de ADRIANE GONÇALVES DE SOUSA para ANA CAROLINA
-          MARCELINO DE ARAUJO SILVA por Agsousa em 21/03/2017 18:23:07 -- em 17/04/2017 13:38:33
-          por
-          Acsilva -> CONCLUSOS PARA DESPACHO JUIZ(A) PRESIDENTE(A) 31930 07/06/2016 Situação
-          inalterada - autos conclusos - pendente expedição de alvará -- em 02/05/2017 16:23:41 por
-           Acsilva -> CONCLUSOS PARA DESPACHO JUIZ(A) PRESIDENTE(A) 31930 07/06/2016 Situação
-           inalterada - autos conclusos - pendente expedição de alvará
-        """
-
-        data = {'movement': movement,
-                'person_asked_by': self.requester_user.person.id,
-                'person_executed_by': self.correspondent_user.person.id,
-                'type_task': type_task,
-                'description': description,
-                'delegation_date': delegation_date,
-                'final_deadline_date': final_deadline_date}  # Unico requerido
-        form = TaskForm(data=data)
+        data = {
+            "office": self.office.pk,
+            "person_asked_by": self.user.person.pk,
+            "type_task": self.type_task.pk,
+            "performance_place": "Fórum",
+            "final_deadline_date": timezone.now() + timedelta(days=7),
+            "description": "Retirar certidão",
+        }
+        form = TaskForm(data=data, request=self.request)
         self.assertTrue(form.is_valid(), form.errors)
 
     def test_list_view(self):
-        url = reverse('task_list')
-        resp = self.client.get(url)
-
-        self.assertEqual(resp.status_code, 200)
+        response = self.client.get(reverse("task_list"))
+        self.assertEqual(response.status_code, 200)
 
     def test_create_view(self):
-        movement = mommy.make(Movement).id
-        url = reverse('task_add', kwargs={'movement': movement})
-        resp = self.client.get(url)
-
-        self.assertEqual(resp.status_code, 200)
+        response = self.client.get(reverse("task_add", kwargs={
+            "movement": self.movement.pk}))
+        self.assertEqual(response.status_code, 200)
 
     def test_update_view(self):
-        # Task tem algumas fk, o que pode causar erros se instanciados diretamente pelo mommy.
-        # Neste caso deve-se instanciar cada objeto separadamente
-        c_inst = mommy.make(Task, movement=mommy.make(Movement, legacy_code='999'),
-                            person_asked_by=mommy.make(Person, is_active=True, is_lawyer=True),
-                            person_executed_by=mommy.make(Person, is_lawyer=True),
-                            type_task=mommy.make(TypeTask))
-
-        url = reverse('task_update', kwargs={'pk': str(c_inst.id), 'movement': c_inst.movement.id})
-        resp = self.client.get(url)
-        self.assertEqual(resp.status_code, 200)
-
-    # def test_delete_view(self):
-    #     c_inst = mommy.make(Task)
-    #     data = {'task_list': {c_inst.id}, 'movement': c_inst.movement.id}
-    #     url = reverse('task_delete')
-    #     resp = self.client.post(url, data, follow=True)
-    #     self.assertEqual(resp.status_code, 200)
+        task = self.make_task()
+        response = self.client.get(reverse("task_update", kwargs={
+            "pk": task.pk, "movement": self.movement.pk}))
+        self.assertEqual(response.status_code, 200)
 
 
-class TaskHistoryTest(TestCase):
-    def test_model(self):
-        # mommy deixa as coisas bem mais faaceis
-        c_inst = mommy.make(TaskHistory)
-        self.assertTrue(isinstance(c_inst, TaskHistory))
-
-
-class EcmTest(TestCase):
+class TaskHistoryTest(OfficeTestCase):
     def setUp(self):
-        User.objects.create_user(username='username', password='password')
-        self.client.login(username='username', password='password')
+        self.setup_office()
 
-    def test_model(self):
-        # mommy deixa as coisas bem mais faaceis
-        c_inst = mommy.make(Ecm, path='ECM/something.pdf')
-        self.assertTrue(isinstance(c_inst, Ecm))
+    def test_status_change_records_history(self):
+        task = self.make_task()
+        before = task.history.count()
+        task.task_status = TaskStatus.ACCEPTED
+        task.alter_user = self.user
+        task.save()
+        task.refresh_from_db()
+        self.assertEqual(task.status, TaskStatus.ACCEPTED)
+        self.assertGreater(task.history.count(), before)
+        self.assertEqual(task.history.first().task_status, task.task_status)
+
+
+class EcmTest(OfficeTestCase):
+    def setUp(self):
+        self.setup_office()
+        self.task = self.make_task()
+
+    def upload(self):
+        response = self.client.post(reverse("ecm_add", kwargs={"pk": self.task.pk}), {
+            "path": SimpleUploadedFile("certidao.txt", b"documento de teste")})
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()["success"], response.json())
+        return Ecm.objects.get(pk=response.json()["id"])
 
     def test_create_view(self):
-        task = mommy.make(Task, movement=mommy.make(Movement, legacy_code='999'),
-                          person_asked_by=mommy.make(Person, name='joao', is_active=True,
-                                                     is_lawyer=True),
-                          person_executed_by=mommy.make(Person, name='pedro', is_lawyer=True),
-                          type_task=mommy.make(TypeTask, name='TT123')).id
-        url = reverse('ecm_add', kwargs={'pk': task})
-        resp = self.client.post(url)
+        ecm = self.upload()
+        self.assertEqual(ecm.task, self.task)
+        self.assertEqual(ecm.create_user, self.user)
+        with ecm.path.open("rb") as stream:
+            self.assertEqual(stream.read(), b"documento de teste")
 
-        self.assertEqual(resp.status_code, 200)
+    def test_empty_upload_is_rejected(self):
+        response = self.client.post(reverse("ecm_add", kwargs={"pk": self.task.pk}))
+        self.assertFalse(response.json()["success"])
+        self.assertFalse(Ecm.objects.filter(task=self.task).exists())
 
+    @pytest.mark.xfail(strict=True, raises=AssertionError, reason="BUG-002: EcmTask PROTECT prevents deleting uploaded ECM")
     def test_delete_view(self):
-        task = mommy.make(Task, movement=mommy.make(Movement, legacy_code='999'),
-                          person_asked_by=mommy.make(Person, name='joao', is_active=True,
-                                                     is_lawyer=True),
-                          person_executed_by=mommy.make(Person, name='pedro', is_lawyer=True),
-                          type_task=mommy.make(TypeTask, name='TT123')).id
-        url = reverse('delete_ecm', kwargs={'pk': task})
-        resp = self.client.post(url)
+        ecm = self.upload()
+        response = self.client.post(reverse("delete_ecm", kwargs={"pk": ecm.pk}))
+        self.assertTrue(response.json()["is_deleted"], response.json())
+        self.assertFalse(Ecm.objects.filter(pk=ecm.pk).exists())
 
-        self.assertEqual(resp.status_code, 200)
+    def test_external_download_requires_matching_hash(self):
+        ecm = self.upload()
+        url = reverse("external-media", kwargs={
+            "path": ecm.path.name, "task_hash": self.task.task_hash})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(b"".join(response.streaming_content), b"documento de teste")
+        wrong = reverse("external-media", kwargs={
+            "path": ecm.path.name, "task_hash": uuid4()})
+        self.assertEqual(self.client.get(wrong).status_code, 404)
+
+    def test_external_download_missing_file_is_404(self):
+        ecm = self.upload()
+        ecm.path.storage.delete(ecm.path.name)
+        url = reverse("external-media", kwargs={
+            "path": ecm.path.name, "task_hash": self.task.task_hash})
+        self.assertEqual(self.client.get(url).status_code, 404)
 
 
-class TaskDetailTest(TestCase):
+class TaskDetailTest(OfficeTestCase):
     def test_valid_TaskDetailForm(self):
-        data = {'execution_date': timezone.now(),
-                'survey_result': 'cumprido', 'notes': 'teste'}
-        form = TaskDetailForm(data=data)
-        self.assertTrue(form.is_valid())
+        form = TaskDetailForm(data={
+            "execution_date": timezone.now(), "survey_result": "cumprido", "notes": "teste"})
+        self.assertTrue(form.is_valid(), form.errors)

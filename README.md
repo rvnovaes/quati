@@ -45,6 +45,9 @@ Endereços em desenvolvimento:
 
 Comandos úteis: `make shell`, `make psql`, `make migrate`, `make migrations`, `make test`, `make check`.
 
+Veja [a documentação da suíte de testes](docs/TESTES.md) para executar os testes isolados,
+consultar a cobertura dos fluxos e reproduzir as falhas conhecidas antes da limpeza de código.
+
 E-mail
 ------
 

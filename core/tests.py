@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 from django.urls import reverse
-from django.test import TestCase
+from django.test import override_settings
+from tests.support import OfficeTestCase
 
 from model_bakery import baker as mommy
 
@@ -8,10 +9,9 @@ from core.models import Person, City, Country, State, AddressType, ContactMechan
 from core.forms import PersonForm, AddressForm, UserCreateForm
 
 
-class PersonTest(TestCase):
+class PersonTest(OfficeTestCase):
     def setUp(self):
-        User.objects.create_user(username='username', password='password')
-        self.client.login(username='username', password='password')
+        self.setup_office()
 
     def test_model(self):
         # mommy deixa as coisas bem mais faaceis
@@ -46,15 +46,16 @@ class PersonTest(TestCase):
 
     def test_delete_view(self):
         c_inst = mommy.make(Person, name='Random')
-        data = {'person_list': {c_inst.id}}
+        data = {'selection': [c_inst.id]}
         url = reverse('person_delete')
         resp = self.client.post(url, data, follow=True)
         # print(resp.context)
 
         self.assertEqual(resp.status_code, 200)
+        self.assertFalse(type(c_inst).objects.filter(pk=c_inst.pk).exists())
 
 
-class AdressTest(TestCase):
+class AdressTest(OfficeTestCase):
     def test_model_city(self):
         c_inst = mommy.make(City)
         self.assertTrue(isinstance(c_inst, City))
@@ -93,25 +94,25 @@ class AdressTest(TestCase):
         self.assertTrue(form.is_valid())
 
 
-class ContactMechanismTest(TestCase):
+class ContactMechanismTest(OfficeTestCase):
     def test_model(self):
         c_inst = mommy.make(ContactMechanism)
         self.assertTrue(isinstance(c_inst, ContactMechanism))
 
 
-class ContactUsTest(TestCase):
+class ContactUsTest(OfficeTestCase):
     def test_model(self):
         c_inst = mommy.make(ContactUs)
         self.assertTrue(isinstance(c_inst, ContactUs))
 
 
-class AddressTypeTest(TestCase):
+class AddressTypeTest(OfficeTestCase):
     def test_model(self):
         c_inst = mommy.make(AddressType, name='residencial')
         self.assertTrue(c_inst, AddressType)
 
 
-class UserTest(TestCase):
+class UserTest(OfficeTestCase):
     def test_model(self):
         c_isnt = mommy.make(
             User,
@@ -122,7 +123,12 @@ class UserTest(TestCase):
             password=123456)
         self.assertTrue(c_isnt, User)
 
+    @override_settings(AUTH_PASSWORD_VALIDATORS=[{
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "OPTIONS": {"min_length": 8},
+    }])
     def test_invalid_senha_curta_UserCreateForm(self):
+        self.setup_office()
         data = {
             'first_name': 'Random',
             'last_name': 'RandomLast',
@@ -131,5 +137,8 @@ class UserTest(TestCase):
             'password1': '12345',
             'password2': '12345'
         }
-        form = UserCreateForm(data=data)
+        data["office"] = self.office.pk
+        form = UserCreateForm(data=data, request=self.post_request)
         self.assertFalse(form.is_valid())
+        self.assertIn("password2", form.errors)
+        self.assertEqual(form.errors.as_data()["password2"][0].code, "password_too_short")
