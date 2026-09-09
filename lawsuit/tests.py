@@ -1,4 +1,3 @@
-import pytest
 from django.urls import reverse
 from tests.support import OfficeTestCase
 
@@ -164,7 +163,6 @@ class FolderTest(OfficeTestCase):
 
         self.assertEqual(resp.status_code, 200)
 
-    @pytest.mark.xfail(strict=True, raises=AttributeError, reason="BUG-001: folder edit dereferences missing legacy sentinel")
     def test_update_view(self):
         url = reverse('folder_update', kwargs={'pk': self.c_inst.id})
         resp = self.client.get(url)

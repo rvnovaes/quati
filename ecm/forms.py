@@ -5,7 +5,7 @@ from django.utils.translation import gettext_lazy as _
 
 from .models import Attachment, DefaultAttachmentRule
 from core.forms import BaseModelForm
-from core.utils import filter_valid_choice_form, get_office_field, get_office_session
+from core.utils import get_office_field, get_office_session
 from core.models import City, State, Person
 from core.widgets import TypeaHeadForeignKeyWidget
 from lawsuit.models import CourtDistrict
@@ -47,7 +47,7 @@ class DefaultAttachmentRuleForm(BaseModelForm):
     )
 
     type_task = forms.ModelChoiceField(
-        queryset=filter_valid_choice_form(TypeTask.objects.all()).order_by('name'),
+        queryset=TypeTask.objects.all().order_by('name'),
         empty_label='',
         required=False,
         label='Tipo de Serviço',
@@ -61,7 +61,7 @@ class DefaultAttachmentRuleForm(BaseModelForm):
                                                                        url='/client_form'))
 
     state = forms.ModelChoiceField(
-        queryset=filter_valid_choice_form(State.objects.all()),
+        queryset=State.objects.all(),
         empty_label='',
         required=False,
         label='UF',
@@ -106,8 +106,8 @@ class DefaultAttachmentRuleForm(BaseModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['office'] = get_office_field(self.request)
-        self.fields['type_task'].queryset = filter_valid_choice_form(TypeTask.objects.filter(
-            is_active=True, office=get_office_session(self.request))).order_by('name')        
+        self.fields['type_task'].queryset = TypeTask.objects.filter(
+            is_active=True, office=get_office_session(self.request)).order_by('name')
 
 
 class DefaultAttachmentRuleCreateForm(DefaultAttachmentRuleForm):

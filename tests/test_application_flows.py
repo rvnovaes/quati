@@ -1,6 +1,5 @@
 """Regression contracts through real HTTP endpoints and persisted domain data."""
 import json
-import pytest
 from decimal import Decimal
 from unittest.mock import patch
 
@@ -335,14 +334,28 @@ class ApplicationFlows(OfficeTestCase):
         self.assertEqual(task.create_user, self.user)
         self.assertTrue(task.task_number)
 
-    @pytest.mark.xfail(strict=True, raises=ValueError,
-                       reason="BUG-003: billing filter passes int to Django isnull lookup")
     def test_pay_report_unbilled_status_filter(self):
         parent, child = self.finished_pair()
         response = self.client.get(reverse("task_report_to_pay_data"),
                                    {"status": "1", "group_by_tasks": "E"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual([row["task_id"] for row in json.loads(response.json())], [parent.pk])
+
+    def test_pay_report_billing_status_separates_billed_and_unbilled(self):
+        unbilled, child = self.finished_pair()
+        billed = self.make_task()
+        billed_child = self.make_task(office=child.office, parent=billed)
+        Task.objects.filter(pk__in=[billed.pk, billed_child.pk]).update(
+            task_status=TaskStatus.FINISHED, finished_date=timezone.now())
+        Task.objects.filter(pk=billed.pk).update(billing_date=timezone.now())
+        for status, expected in (("0", {billed.pk}), ("1", {unbilled.pk}),
+                                 ("", {billed.pk, unbilled.pk})):
+            with self.subTest(status=status):
+                response = self.client.get(reverse("task_report_to_pay_data"), {
+                    "status": status, "office": "Office B", "group_by_tasks": "E"})
+                self.assertEqual(response.status_code, 200)
+                self.assertSetEqual(
+                    {row["task_id"] for row in json.loads(response.json())}, expected)
 
     def test_survey_cannot_be_edited_from_another_office(self):
         other = self.other_office()

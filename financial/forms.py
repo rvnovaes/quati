@@ -1,6 +1,6 @@
 from django import forms
 from core.models import Person, State, City, AdminSettings
-from core.utils import filter_valid_choice_form, get_office_field, get_office_related_office_field, \
+from core.utils import get_office_field, get_office_related_office_field, \
     get_office_session, get_admin_setting
 from lawsuit.models import CourtDistrict, CourtDistrictComplement
 from task.models import TypeTask
@@ -32,7 +32,7 @@ class ServicePriceTableForm(BaseModelForm):
                                                               url='/client_form'))
 
     state = forms.ModelChoiceField(
-        queryset=filter_valid_choice_form(State.objects.all().order_by('initials')),
+        queryset=State.objects.all().order_by('initials'),
         empty_label='',
         required=False,
         label='UF',
@@ -66,7 +66,7 @@ class ServicePriceTableForm(BaseModelForm):
                            ))
 
     type_task = forms.ModelChoiceField(
-        queryset=filter_valid_choice_form(TypeTask.objects.all().order_by('name')),
+        queryset=TypeTask.objects.all().order_by('name'),
         empty_label='',
         required=False,
         label=u"Tipo de Serviço",
@@ -117,8 +117,8 @@ class ServicePriceTableForm(BaseModelForm):
         self.fields['office_correspondent'] = get_office_related_office_field(self.request)
         self.fields['office_correspondent'].label = u"Escritório Correspondente"
         self.fields['office'].required = True
-        self.fields['type_task'].queryset = filter_valid_choice_form(TypeTask.objects.get_queryset(
-            office=office_session.id).order_by('name'))
+        self.fields['type_task'].queryset = TypeTask.objects.get_queryset(
+            office=office_session.id).order_by('name')
         self.fields['office_network'].queryset = self.fields['office_network'].queryset.filter(members=office_session)
         self.fields['office_network'].required = True
 

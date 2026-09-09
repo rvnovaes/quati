@@ -20,25 +20,6 @@ class LegacySystem(Enum):
     ELAW = "eLaw"
 
 
-def filter_valid_choice_form(queryset):
-    """
-    Remove o registro "inválido" (criado pelas importações antigas) de um queryset usado em
-    ModelChoiceField. Não executa consulta no momento da chamada: a exclusão é feita de forma
-    preguiçosa, para não acessar o banco durante o import dos módulos de forms.
-
-    :return: Retorna o queryset passado como parametro sem o registro invalido
-    :rtype: QuerySet
-    """
-    model = queryset.model
-    class_verbose_name_invalid = model._meta.verbose_name.upper() + '-INVÁLIDO'
-    field_names = {f.name for f in model._meta.get_fields()}
-    if 'name' in field_names:
-        return queryset.exclude(name=class_verbose_name_invalid)
-    if 'legacy_code' in field_names:
-        return queryset.exclude(legacy_code='REGISTRO-INVÁLIDO')
-    return queryset
-
-
 def get_admin_setting(model, setting_name):
     # busca o valor da configuracao do sistema de um campo específico passado como parametro
     # obs.: o model deve ser passado como parametro pq o django nao permite importar model nesse arquivo utils
@@ -256,30 +237,6 @@ def check_cpf_cnpj_exist(model, cpf_cnpj):
         data.update(model_to_dict(instance, fields=['legal_name', 'name', 'cpf_cnpj', 'id']))
         data['exist'] = True
     return data
-
-
-def get_invalid_data(model, office=None):
-    from django.contrib.auth.models import User
-    from core.models import Office
-
-    class_verbose_name_invalid = model._meta.verbose_name.upper(
-    ) + '-INVÁLIDO'
-    invalid_registry = model.objects.none()
-    try:
-        field_name = getattr(model, 'legal_name', model.name).field_name
-        invalid_registry = model.objects.filter(
-            **{field_name: class_verbose_name_invalid}
-        )
-    except:
-        if getattr(model, 'legacy_code', None):
-            invalid_registry = model.objects.filter(
-                legacy_code='REGISTRO-INVÁLIDO')
-    finally:
-        if model not in [User, Office] and office:
-            invalid_registry = invalid_registry.filter(office_id=office.id)
-    if invalid_registry:
-        return invalid_registry.order_by('pk').earliest('pk')
-    return None
 
 
 def get_person_field(request, user=None):

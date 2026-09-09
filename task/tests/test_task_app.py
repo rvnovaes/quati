@@ -1,4 +1,3 @@
-import pytest
 from datetime import timedelta
 from uuid import uuid4
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -92,12 +91,14 @@ class EcmTest(OfficeTestCase):
         self.assertFalse(response.json()["success"])
         self.assertFalse(Ecm.objects.filter(task=self.task).exists())
 
-    @pytest.mark.xfail(strict=True, raises=AssertionError, reason="BUG-002: EcmTask PROTECT prevents deleting uploaded ECM")
     def test_delete_view(self):
         ecm = self.upload()
-        response = self.client.post(reverse("delete_ecm", kwargs={"pk": ecm.pk}))
+        storage, name = ecm.path.storage, ecm.path.name
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(reverse("delete_ecm", kwargs={"pk": ecm.pk}))
         self.assertTrue(response.json()["is_deleted"], response.json())
         self.assertFalse(Ecm.objects.filter(pk=ecm.pk).exists())
+        self.assertFalse(storage.exists(name))
 
     def test_external_download_requires_matching_hash(self):
         ecm = self.upload()

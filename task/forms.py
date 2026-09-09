@@ -5,7 +5,7 @@ from django.utils import timezone
 from core.widgets import MultipleFileField
 
 from core.models import Person, ImportXlsFile
-from core.utils import filter_valid_choice_form, get_office_field, get_office_session
+from core.utils import get_office_field, get_office_session
 from core.widgets import MDDateTimepicker, MDSelect
 from core.forms import BaseForm, XlsxFileField
 from lawsuit.models import CourtDistrict, CourtDistrictComplement, City, Movement, LawSuit, Folder
@@ -36,19 +36,15 @@ class TaskForm(BaseForm):
 
     person_asked_by = forms.ModelChoiceField(
         empty_label='Selecione...',
-        queryset=filter_valid_choice_form(Person.objects.active().requesters().
-                                          active_offices().order_by('name')))
+        queryset=Person.objects.active().requesters().active_offices().order_by('name'))
 
     person_company_representative = forms.ModelChoiceField(
         empty_label='Selecione...',
         required=False,
-        queryset=filter_valid_choice_form(
-            Person.objects.active().filter(
-                legal_type='F').order_by('name')))
+        queryset=Person.objects.active().filter(legal_type='F').order_by('name'))
 
     type_task = forms.ModelChoiceField(
-        queryset=filter_valid_choice_form(
-            TypeTask.objects.filter(is_active=True)).order_by('name'),
+        queryset=TypeTask.objects.filter(is_active=True).order_by('name'),
         empty_label='Selecione...',
         label='Tipo de Serviço')
 
@@ -76,13 +72,10 @@ class TaskForm(BaseForm):
         self.fields['office'] = get_office_field(self.request)
         office_session = get_office_session(self.request)
         if office_session:
-            self.fields['person_asked_by'].queryset = filter_valid_choice_form(
-                Person.objects.active().requesters(
-                    office_id=office_session.pk).active_offices().order_by(
-                        'name'))
-            self.fields['type_task'].queryset = filter_valid_choice_form(
-                TypeTask.objects.filter(
-                    is_active=True, office=office_session)).order_by('name')
+            self.fields['person_asked_by'].queryset = Person.objects.active().requesters(
+                office_id=office_session.pk).active_offices().order_by('name')
+            self.fields['type_task'].queryset = TypeTask.objects.filter(
+                is_active=True, office=office_session).order_by('name')
         else:
             self.fields['type_task'].queryset = TypeTask.objects.none()
         if self.request.user:

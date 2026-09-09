@@ -21,7 +21,8 @@ from django.utils import timezone
 from django.utils.formats import date_format
 from django.views.generic import CreateView, UpdateView, TemplateView, View
 from django.views.static import serve as static_serve_view
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.views.decorators.http import require_POST
 from django_tables2 import SingleTableView, RequestConfig
 from djmoney.money import Money
 from core.messages import CREATE_SUCCESS_MESSAGE, UPDATE_SUCCESS_MESSAGE, DELETE_SUCCESS_MESSAGE, \
@@ -56,7 +57,7 @@ from task.utils import get_task_attachment, get_dashboard_tasks, get_task_ecms, 
 from decimal import Decimal
 from guardian.core import ObjectPermissionChecker
 from functools import reduce
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
 import os
 from django.conf import settings
 from urllib.parse import urljoin
@@ -734,7 +735,7 @@ class ToPayTaskReportView(View):
 
             if data['status']:
                 key = "parent__{}__isnull".format(self.datetime_field)
-                query.add(Q(**{key: int(data['status'])}), Q.AND)
+                query.add(Q(**{key: data['status'] == '1'}), Q.AND)
 
             if data['client']:
                 query.add(
@@ -1239,13 +1240,19 @@ def delete_ecm(request, pk):
 
 
 @login_required
+@require_POST
 def delete_internal_ecm(request, pk):
+    office = get_office_session(request)
+    if not office or not ObjectPermissionChecker(request.user).get_perms(office):
+        raise PermissionDenied
+    get_object_or_404(Ecm, pk=pk, task__office=office)
     return delete_ecm(request, pk)
 
 
+@require_POST
 def delete_external_ecm(request, task_hash, pk):
     # Para usuario que apenas acessam a task por hash, sem autenticar
-    ecm = Ecm.objects.get(pk=pk)
+    ecm = get_object_or_404(Ecm, pk=pk)
     if ecm.task.task_hash.hex == task_hash:
         return delete_ecm(request, pk)
     return JsonResponse({'message': 'Hash inválido'})

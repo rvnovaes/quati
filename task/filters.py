@@ -5,7 +5,6 @@ from django_filters import FilterSet, ModelChoiceFilter, NumberFilter, CharFilte
 from dal import autocomplete
 from django.db.models import Q
 from core.models import Person, State, Office, Team
-from core.utils import filter_valid_choice_form
 from core.widgets import MDDateTimeRangeFilter, TypeaHeadForeignKeyWidget, MDSelect
 from financial.models import CostCenter
 from lawsuit.models import CourtDistrict, Organ, CourtDistrictComplement
@@ -69,12 +68,11 @@ class TaskDashboardApiFilter(TaskApiFilter):
 
 class TaskFilter(FilterSet):
     state = ModelMultipleChoiceFilter(
-        queryset=filter_valid_choice_form(
-            State.objects.filter(is_active=True)),
+        queryset=State.objects.filter(is_active=True),
         label="UF",
         widget=autocomplete.ModelSelect2Multiple(url='state-autocomplete'))
     court_district = ModelMultipleChoiceFilter(
-        queryset=filter_valid_choice_form(CourtDistrict.objects.all()),
+        queryset=CourtDistrict.objects.all(),
         label='Comarca',
         widget=autocomplete.ModelSelect2Multiple(url='courtdistrict_filter_select2', forward=['state']))
     court_district_complement = ModelChoiceFilter(label='Complemento de Comarca',
@@ -98,7 +96,7 @@ class TaskFilter(FilterSet):
     cost_center = ModelChoiceFilter(label="Setor",
                                     required=False,
                                     widget=MDSelect(url='/financeiro/centros-de-custos/filter_autocomplete',),
-                                    queryset=filter_valid_choice_form(CostCenter.objects.all()),)
+                                    queryset=CostCenter.objects.all(),)
     court = ModelChoiceFilter(label="Órgão",
                               required=False,
                               widget=MDSelect(url='/processos/organ_filter_select2_autocomplete', ),
@@ -162,7 +160,7 @@ class TaskFilter(FilterSet):
         name='finished_in', label="Finalizadas entre:")
 
     custom_filter = ModelChoiceFilter(
-        queryset=filter_valid_choice_form(Filter.objects.all()),
+        queryset=Filter.objects.all(),
         label="Escolher filtro salvo",
         required=False,
         widget=Select(attrs={'onchange': 'this.form.submit()'}))

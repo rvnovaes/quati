@@ -3,7 +3,6 @@ import importlib
 import json
 from abc import abstractproperty
 from urllib.parse import urljoin
-from functools import wraps
 from django import forms
 from django.forms.utils import ErrorList
 from django.conf import settings
@@ -44,8 +43,8 @@ from core.models import Person, Address, City, State, Country, AddressType, Offi
 from core.signals import create_person
 from core.tables import PersonTable, UserTable, AddressTable, AddressOfficeTable, OfficeTable, InviteTable, \
     InviteOfficeTable, OfficeMembershipTable, ContactMechanismTable, ContactMechanismOfficeTable, TeamTable
-from core.utils import login_log, logout_log, get_office_session, get_domain, filter_valid_choice_form, \
-    check_cpf_cnpj_exist, get_office_by_id, get_invalid_data, set_user_default_office
+from core.utils import login_log, logout_log, get_office_session, get_domain, \
+    check_cpf_cnpj_exist, get_office_by_id, set_user_default_office
 from core.view_validators import create_person_office_relation, person_exists
 from core.mail import send_mail_sign_up
 from financial.models import ServicePriceTable
@@ -249,32 +248,6 @@ class MultiDeleteView(DeleteView):
             return HttpResponseRedirect(self.success_url)
         else:
             return HttpResponseRedirect(self.get_success_url())
-
-
-def remove_invalid_registry(f):
-    """
-    Embrulha o metodo get_context_data onde deseja remover da listagem  o registro invalido gerado
-    pela ETL.
-    :param f:
-    :return f:
-    """
-
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        try:
-            model = args[0].model
-            office = None
-            if getattr(model, 'office', None):
-                office = get_office_session(args[0].request)
-            invalid_registry = get_invalid_data(model, office)
-            if invalid_registry:
-                kwargs['remove_invalid'] = invalid_registry.pk
-        except:
-            pass
-        res = f(*args, **kwargs)
-        return res
-
-    return wrapper
 
 
 class LoginCustomView(LoginView):
@@ -516,7 +489,6 @@ class SingleTableViewMixin(SingleTableView):
             return queryset
 
     @set_search_model_attrs
-    @remove_invalid_registry
     def get_context_data(self, **kwargs):
         context = super(SingleTableViewMixin, self).get_context_data(**kwargs)
         context['module'] = self.model.__module__
@@ -557,13 +529,8 @@ class SingleTableViewMixin(SingleTableView):
                     qs = self.model.objects.get_queryset(office=office)
             except:
                 pass
-            if kwargs.get('remove_invalid'):
-                qs = self.filter_queryset(
-                    qs.filter(~Q(pk=kwargs.get('remove_invalid'))))
-                table = self.table_class(qs)
-            else:
-                qs = self.filter_queryset(qs)
-                table = self.table_class(qs)
+            qs = self.filter_queryset(qs)
+            table = self.table_class(qs)
         total_colums = len(table.columns.items())
         RequestConfig(
             self.request, paginate={
@@ -603,15 +570,7 @@ class PersonListView(CustomLoginRequiredView, SingleTableViewMixin):
         'name',
     )
 
-    @remove_invalid_registry
     def get_context_data(self, **kwargs):
-        """
-        Sobrescreve o metodo get_context_data utilizando o decorator remove_invalid_registry
-        para remover o registro invalido da listagem
-        :param kwargs:
-        :return: Retorna o contexto contendo a listatem
-        :rtype: dict
-        """
         context = super(PersonListView, self).get_context_data(**kwargs)
         office_session = get_office_session(request=self.request)
         only_linked_person = True if self.request.GET.get(
@@ -1589,7 +1548,7 @@ class CityAutoCompleteView(TypeaHeadGenericSearch):
 
 class CitySelect2Autocomplete(autocomplete.Select2QuerySetView):
     def get_queryset(self):
-        qs = filter_valid_choice_form(City.objects.filter(is_active=True))
+        qs = City.objects.filter(is_active=True)
         court_district = self.forwarded.get('court_district', None)
         if court_district:
             qs = qs.filter(court_district_id=court_district)
@@ -1609,7 +1568,7 @@ class ZipCodeCitySelect2Autocomplete(autocomplete.Select2QuerySetView):
         if self.q:
             q_list = self.q.split('|')
             if q_list and len(q_list) == 2:
-                qs = filter_valid_choice_form(City.objects.filter(is_active=True))
+                qs = City.objects.filter(is_active=True)
                 filters = Q(name__unaccent__icontains=q_list[0])
                 filters &= Q(state__initials__unaccent__icontains=q_list[1])
                 qs = qs.filter(filters)
@@ -2489,7 +2448,7 @@ class CustomMessagesView(View):
 
 class TeamFilterSelect2Autocomplete(autocomplete.Select2QuerySetView):
     def get_queryset(self):
-        qs = filter_valid_choice_form(Team.objects.filter(office=get_office_session(self.request)))
+        qs = Team.objects.filter(office=get_office_session(self.request))
         if self.q:
             filters = Q(name__unaccent__icontains=self.q)
             qs = qs.filter(filters)

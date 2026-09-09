@@ -17,7 +17,7 @@ from allauth.account.utils import filter_users_by_username, user_pk_to_url_str, 
 from core.fields import CustomBooleanField
 from core.models import ContactUs, Person, Address, City, ContactMechanism, ContactMechanismType, AddressType, \
     LegalType, Office, Invite, InviteOffice, Team
-from core.utils import filter_valid_choice_form, get_office_field, get_office_session, get_domain, get_person_field
+from core.utils import get_office_field, get_office_session, get_domain, get_person_field
 from core.widgets import TypeaHeadForeignKeyWidget, MDSelect, CodeMirrorTextarea, MultipleFileField
 from core.models import OfficeMixin, ImportXlsFile
 from core.utils import validate_xlsx_header
@@ -177,7 +177,7 @@ class ContactMechanismForm(BaseModelForm):
         ]
 
     contact_mechanism_type = forms.ModelChoiceField(
-        queryset=filter_valid_choice_form(ContactMechanismType.objects.all()),
+        queryset=ContactMechanismType.objects.all(),
         empty_label='',
         required=True,
         label='Tipo',
@@ -208,7 +208,7 @@ class AddressForm(BaseModelForm):
                                   widget=MDSelect(url='/city/autocomplete_select2/', ),
                                   queryset=City.objects.all())
     address_type = forms.ModelChoiceField(
-        queryset=filter_valid_choice_form(AddressType.objects.all()),
+        queryset=AddressType.objects.all(),
         empty_label='',
         required=True,
         label='Tipo',
@@ -260,8 +260,7 @@ class PersonForm(BaseModelForm):
     )
 
     auth_user = forms.ModelChoiceField(
-        queryset=filter_valid_choice_form(
-            User.objects.all().order_by('username')),
+        queryset=User.objects.all().order_by('username'),
         empty_label='',
         required=False,
         label='Usuário do sistema',

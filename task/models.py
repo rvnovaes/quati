@@ -1,7 +1,7 @@
 import os
 import json
 from enum import Enum
-from django.db import transaction
+from django.db import router, transaction
 import uuid
 import pickle
 from django.conf import settings
@@ -771,19 +771,24 @@ class Ecm(Audit, LegacyCode):
                 contents = pfile.read()
             return contents
 
-    def delete(self, *args, **kwargs):
-        if self.legacy_code:
-            raise ValidationError(
-                "Não é possível apagar um arquivo que foi vinculado a outro sistema."
-            )
+    def delete(self, using=None, keep_parents=False):
+        using = using or router.db_for_write(type(self), instance=self)
+        with transaction.atomic(using=using):
+            # Lock before checking links; uploads always create an own-task link.
+            current = type(self).objects.using(using).select_for_update().get(pk=self.pk)
+            if current.legacy_code:
+                raise ValidationError(
+                    "Não é possível apagar um arquivo que foi vinculado a outro sistema.")
+            copies = type(self).objects.using(using).exclude(pk=self.pk)
+            if (current.ecm_related_id or copies.filter(ecm_related_id=self.pk).exists()
+                    or copies.filter(path=current.path.name).exists()):
+                raise ValidationError(
+                    "Não é possível excluir um anexo que possui cópias vinculadas.")
 
-        # Após apagar um Ecm devemos apagar o arquivo local caso o mesmo ainda esteja no disco.
-        # O arquivo continua no disco em alguns casos pois ele pode ser ter sido criado antes de
-        # utilizarmos o S3.
-        if self.id is None and self.local_file_exists():
-            os.remove(self.local_file_path)
-
-        return super().delete(*args, **kwargs)
+            EcmTask.objects.using(using).filter(ecm_id=self.pk, task_id=current.task_id).delete()
+            # Other-task links remain protected. A failure restores the own-task
+            # links too; django-cleanup removes the file only after commit.
+            return super().delete(using=using, keep_parents=keep_parents)
 
     def download(self):
         """Baixamos o arquivo do S3 caso ele não exista localmente"""

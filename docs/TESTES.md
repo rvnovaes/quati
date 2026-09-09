@@ -48,28 +48,16 @@ Executar as suítes sequencialmente: elas usam o mesmo banco de testes. Não exe
 | Pastas e processos | Criação de pasta com cliente, escritório, numeração e auditoria; validação de campos obrigatórios; criação/edição de processo mantendo a pasta; cadastro/edição de instância; exclusão real dos registros selecionados e preservação dos não selecionados. |
 | OS | Criação HTTP com vínculo à movimentação e numeração; aceite; conclusão com resposta de questionário; retorno limpando data de execução; finalização registrando data; formulário com data inválida não altera status; histórico persistido. |
 | Dashboard | GET devolve totais por status/escritório e reflete aceite; POST retorna 405, conforme o contrato atual. |
-| Anexos | Upload HTTP e conferência dos bytes, autor e vínculo; upload vazio não cria registro; múltiplos anexos em formulário genérico; download com hash correto, hash diferente e arquivo ausente; reprodução do defeito de exclusão. |
+| Anexos | Upload HTTP e conferência dos bytes, autor e vínculo; upload vazio não cria registro; múltiplos anexos em formulário genérico; download com hash correto, hash diferente e arquivo ausente; exclusão e limpeza do arquivo após commit; preservação de compartilhados, legados e cópias; rollback; POST/CSRF e isolamento por escritório. |
 | Questionários | Criação/edição HTTP; pendência resolvida por resposta vinculada; conclusão de OS salva resposta e autor; reprodução do defeito de isolamento na edição. |
 | Financeiro | Valores a pagar e comissão; consulta restrita ao escritório; OS não concluída excluída; resposta sem filtros vazia; faturamento exige seleção e altera somente OS do escritório atual; XLSX aberto como ZIP/XML com linhas e dados esperados. |
 | E-mail | Template real de OS delegada aceita, assunto/conteúdo, destinatários deduplicados, anexo real, redirecionamento de homologação, ausência de destinatários e erro no backend de entrega. O mock de falha está apenas na fronteira de entrega e verifica que ela foi chamada. |
 
 As fixtures de relatórios preparam um retrato financeiro persistido diretamente. Os testes de transição de OS exercitam separadamente as views reais. Nenhum teste depende das 19 definições candidatas à remoção.
 
-## Falhas conhecidas — não são testes ignorados
+## Defeitos reproduzidos pela suíte
 
-Três testes continuam executando o comportamento desejado, mas estão marcados com `xfail(strict=True, raises=...)`. A marcação registra defeitos existentes no código atual; não significa que estejam corrigidos. Um resultado inesperadamente aprovado (`XPASS`) faz a suíte falhar, exigindo a retirada/revisão da marcação. Exceções fora do tipo declarado também falham normalmente. A referência inicial tinha quatro xfails; BUG-004 foi corrigido posteriormente.
-
-| ID | Problema confirmado | Reprodutor |
-|---|---|---|
-| BUG-001 | Edição de pasta acessa `invalid_registry.pk` mesmo quando não existe registro legado inválido, causando `AttributeError`. | `lawsuit/tests.py::FolderTest::test_update_view` |
-| BUG-002 | Upload cria `EcmTask`; o FK `EcmTask.ecm` com `PROTECT` impede a exclusão do próprio anexo, e a API retorna falha. | `task/tests/test_task_app.py::EcmTest::test_delete_view` |
-| BUG-003 | Filtro de faturamento passa `int` para lookup `isnull`, que exige booleano no Django atual; a consulta gera `ValueError`. | `tests/test_application_flows.py::ApplicationFlows::test_pay_report_unbilled_status_filter` |
-
-Para executar todos esses casos como falhas normais:
-
-```bash
-rtk docker compose exec -T web pytest -q --runxfail
-```
+Os quatro defeitos da referência inicial (BUG-001 a BUG-004) foram corrigidos. Seus reprodutores agora executam sem `xfail`. Isso não significa ausência de outros defeitos: os limites de cobertura continuam válidos. O histórico de cada correção está registrado abaixo.
 
 ## Limites
 
@@ -111,3 +99,35 @@ A exclusão em lote valida todos os IDs contra o escritório autorizado antes de
 A correção é específica aos endpoints públicos de questionários; não representa uma auditoria de autorização de todos os módulos da aplicação.
 
 Validação completa após a correção: **119 testes aprovados, 3 xfailed, 8 avisos e 11 subtestes aprovados**, sem falhas inesperadas, em 131,86 segundos. `makemigrations --check --dry-run` retornou `No changes detected`; `git diff --check` passou e o Graphify foi atualizado. O JUnit desta execução está em `/tmp/ezl-survey-fixed.xml` no container e na máquina de trabalho.
+
+## Correção de BUG-002 — exclusão de anexos
+
+A exclusão individual de `Ecm` remove o vínculo automático com sua própria OS dentro de uma transação. Vínculos com outras OS continuam protegidos por `PROTECT`; se a exclusão falhar, o vínculo removido é restaurado. A remoção física fica a cargo do django-cleanup após commit, preservando o arquivo em caso de rollback.
+
+Anexos legados, registros com `ecm_related` (em qualquer direção) e registros que compartilham o mesmo caminho de arquivo têm sua exclusão bloqueada. Esta etapa libera apenas a exclusão de anexos sem compartilhamento; não implementa desvinculação parcial nem muda a exclusão em lote via QuerySet.
+
+Os endpoints interno e externo exigem POST. O botão da tela envia POST com token CSRF. O endpoint interno exige escritório selecionado, permissões nesse escritório e anexo cuja OS pertença a ele; o externo mantém a validação do hash da OS. Essa verificação não representa uma revisão completa das permissões por papel ou de todos os endpoints de anexos.
+
+O reprodutor original perdeu a marcação xfail. `tests/test_ecm_deletion.py` cobre compartilhamento, legado, cópias relacionadas, caminhos duplicados, rollback, CSRF, método HTTP, escritório diferente, sessão adulterada, ausência de escritório, usuário anônimo e exclusão externa por hash. Antes da correção, os casos focados reproduziram seis falhas; após a correção, os 16 testes focados passaram, antes da inclusão dos casos adicionais de rollback e CSRF.
+
+Validação completa: **133 testes aprovados, 2 xfailed, 8 avisos e 11 subtestes aprovados**, em 141,09 segundos. Os dois xfails restantes são BUG-001 e BUG-003. `makemigrations --check --dry-run` retornou `No changes detected`; `git diff --check` passou e o Graphify foi atualizado. O JUnit está em `/tmp/ezl-ecm-fixed.xml` no container e na máquina de trabalho. A interação JavaScript não foi executada em navegador.
+
+## Correção de BUG-001 — retirada das regras de importação legada
+
+Com a decisão de não realizar novas importações de dados antigos, a edição de pastas deixou de buscar um registro fictício antes de carregar o objeto. O teste `FolderTest.test_update_view` perdeu a marcação xfail. A abertura e o salvamento funcionam sem qualquer registro importado.
+
+A limpeza também removeu `get_invalid_data`, `remove_invalid_registry`, `filter_valid_choice_form`, a exclusão especial da busca genérica e os overrides que existiam apenas para aplicar essas regras. Listagens, APIs, formulários e autocompletes deixam de atribuir significado especial aos nomes terminados em `-INVÁLIDO` e ao código `REGISTRO-INVÁLIDO`. Foram mantidos os filtros existentes de escritório, atividade e relacionamento.
+
+`tests/test_legacy_rule_cleanup.py` cobre abertura e salvamento de pasta sem importação, edição de registro com o antigo marcador, listagem e pesquisa, escolhas de formulário, consultas das APIs de pastas e pessoas, listagem financeira e autocomplete. Os testes verificam também que dados de outros escritórios e opções inativas continuam fora dos resultados onde esses filtros já existiam. As verificações das APIs exercitam os querysets; não substituem testes do OAuth.
+
+Campos históricos, vínculos e proteções de exclusão de anexos permanecem preservados. A decisão e os componentes mantidos estão descritos em `docs/LEGADO.md`.
+
+Validação completa: **143 testes aprovados, 1 xfailed, 11 avisos e 13 subtestes aprovados**, em 151,65 segundos. O único xfail restante é BUG-003, no filtro de faturamento. Os avisos adicionais vêm dos testes que agora alcançam a renderização da pasta, cuja tabela já tinha divergência de modelo; essa divergência não foi corrigida nesta etapa. `makemigrations --check --dry-run` retornou `No changes detected`, `git diff --check` passou e o Graphify foi atualizado. O JUnit está em `/tmp/ezl-legacy-fixed.xml` no container e na máquina de trabalho.
+
+## Correção de BUG-003 — filtro de faturamento
+
+O filtro de OS a pagar passa um booleano ao lookup `parent__billing_date__isnull`: `status=1` gera `True` (não faturadas) e `status=0` gera `False` (faturadas). A opção vazia não adiciona restrição de faturamento e mantém os demais filtros e o comportamento existente de consulta sem filtros.
+
+O reprodutor `ApplicationFlows.test_pay_report_unbilled_status_filter` perdeu a marcação xfail. O novo teste `test_pay_report_billing_status_separates_billed_and_unbilled` prepara OS faturadas e não faturadas simultaneamente e confere os IDs retornados para as três opções. Antes da correção, as opções 0 e 1 reproduziram o erro de tipo; a opção Todas já passava.
+
+Validação focada: **8 testes aprovados e 3 subtestes aprovados**. Suíte completa: **145 testes aprovados, 11 avisos e 16 subtestes aprovados**, sem falhas ou xfails, em 152,08 segundos. Os avisos existentes permanecem visíveis. `git diff --check` passou e o Graphify foi atualizado. O JUnit está em `/tmp/ezl-billing-fixed.xml` no container e na máquina de trabalho.
