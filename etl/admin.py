@@ -1,5 +1,6 @@
 from etl.models import DashboardETL, ErrorETL
 from django.contrib import admin
+from django.utils.html import format_html
 
 
 class DashboardErrorInline(admin.TabularInline):
@@ -34,13 +35,12 @@ class DashboardETLAdmin(admin.ModelAdmin):
         return obj.execution_date_finish.strftime("%d-%m-%Y às %H:%M:%S")
 
     def code_executed_query(self, instance):
-        return '<pre><code  class="prettyprint lang-sql">{}</code></pre>'.format(
-            instance.executed_query)
+        return format_html('<pre><code class="prettyprint lang-sql">{}</code></pre>',
+                           instance.executed_query)
 
     quantity_errors.short_description = 'Total de erros'
     time_seconds_start.short_description = 'Inicio'
     time_seconds_finish.short_description = 'Fim'
-    code_executed_query.allow_tags = True
     list_display = [
         'name', 'db_name_source', 'db_host_source', 'time_seconds_start',
         'time_seconds_finish', 'read_quantity', 'imported_quantity',

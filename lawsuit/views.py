@@ -3,13 +3,13 @@ from urllib.parse import urlparse
 
 from django.contrib import messages
 from django.contrib.messages.views import SuccessMessageMixin
-from django.core.urlresolvers import reverse_lazy, reverse
+from django.urls import reverse_lazy, reverse
 from django.core.validators import ValidationError
 from django.views.generic import View
 # project imports
 from django.db.models import ProtectedError, CharField, Value as V, Q
 from django.db.models.functions import Concat
-from django.http import HttpResponseRedirect, Http404
+from django.http import HttpResponseRedirect
 from django.http.response import JsonResponse
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django_tables2 import RequestConfig
@@ -25,21 +25,16 @@ from .models import (Instance, Movement, LawSuit, Folder, CourtDistrict, CourtDi
                      CourtDistrictComplement)
 from .tables import (MovementTable, FolderTable, LawSuitTable, CourtDistrictTable, InstanceTable, CourtDivisionTable,
                      TypeMovementTable, OrganTable, AddressOrganTable, CourtDistrictComplementTable)
-from core.views import remove_invalid_registry, PopupMixin
+from core.views import PopupMixin
 from django.core.cache import cache
 from dal import autocomplete
 from core.views import CustomLoginRequiredView, TypeaHeadGenericSearch
-from core.utils import get_office_session, filter_valid_choice_form, get_invalid_data
+from core.utils import get_office_session
 
 
 class InstanceListView(CustomLoginRequiredView, SingleTableViewMixin):
     model = Instance
     table_class = InstanceTable
-
-    @remove_invalid_registry
-    def get_context_data(self, **kwargs):
-        ret = super(InstanceListView, self).get_context_data(**kwargs)
-        return ret
 
 
 class InstanceCreateView(AuditFormMixin, CreateView):
@@ -165,17 +160,6 @@ class FolderListView(CustomLoginRequiredView, SingleTableViewMixin):
     model = Folder
     table_class = FolderTable
 
-    @remove_invalid_registry
-    def get_context_data(self, **kwargs):
-        """
-        Sobrescreve o metodo get_context_data utilizando o decorator remove_invalid_registry
-        para remover o registro invalido da listagem
-        :param kwargs:
-        :return: Retorna o contexto contendo a listatem
-        :rtype: dict
-        """
-        return super(FolderListView, self).get_context_data(**kwargs)
-
 
 class FolderCreateView(AuditFormMixin, CreateView):
     model = Folder
@@ -211,17 +195,6 @@ class FolderDeleteView(AuditFormMixin, MultiDeleteViewMixin):
 class CourtDistrictListView(CustomLoginRequiredView, SingleTableViewMixin):
     model = CourtDistrict
     table_class = CourtDistrictTable
-
-    @remove_invalid_registry
-    def get_context_data(self, **kwargs):
-        """
-        Sobrescreve o metodo get_context_data utilizando o decorator remove_invalid_registry
-        para remover o registro invalido da listagem
-        :param kwargs:
-        :return: Retorna o contexto contendo a listatem
-        :rtype: dict
-        """
-        return super(CourtDistrictListView, self).get_context_data(**kwargs)
 
 
 class CourtDistrictCreateView(AuditFormMixin, CreateView):
@@ -276,17 +249,6 @@ class CourtDistrictDeleteView(AuditFormMixin, MultiDeleteViewMixin):
 class CourtDivisionListView(CustomLoginRequiredView, SingleTableViewMixin):
     model = CourtDivision
     table_class = CourtDivisionTable
-
-    @remove_invalid_registry
-    def get_context_data(self, **kwargs):
-        """
-        Sobrescreve o metodo get_context_data utilizando o decorator remove_invalid_registry
-        para remover o registro invalido da listagem
-        :param kwargs:
-        :return: Retorna o contexto contendo a listatem
-        :rtype: dict
-        """
-        return super(CourtDivisionListView, self).get_context_data(**kwargs)
 
 
 class CourtDivisionCreateView(AuditFormMixin, CreateView):
@@ -413,13 +375,6 @@ class FolderLawsuitUpdateView(SuccessMessageMixin, GenericFormOneToMany,
         kw['request'] = self.request
         return kw
 
-    def get_object(self, queryset=None):
-        obj = super().get_object(queryset)
-        invalid_registry = get_invalid_data(self.model)
-        if invalid_registry.pk == obj.pk:
-            raise Http404("Registro não foi encontrado")
-        return obj
-
 
 class LawSuitListView(CustomLoginRequiredView, SingleTableViewMixin):
     model = LawSuit
@@ -452,6 +407,10 @@ class LawSuitDeleteView(AuditFormMixin, DeleteView):
     model = LawSuit
     success_message = DELETE_SUCCESS_MESSAGE.format(
         model._meta.verbose_name_plural)
+
+    def post(self, request, *args, **kwargs):
+        # Django >= 4 chama get_object() no post padrão; aqui a exclusão é em lote (sem pk na URL).
+        return self.delete(request, *args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
         pks = self.request.POST.getlist('selection')
@@ -780,8 +739,8 @@ class OrganListView(SuccessMessageMixin, SingleTableViewMixin):
 class OrganSelect2Autocomplete(autocomplete.Select2QuerySetSequenceView):
     @property
     def base_queryset(self):
-        return filter_valid_choice_form(Organ.objects.filter(office=get_office_session(self.request),
-                                                             is_active=True))
+        return Organ.objects.filter(
+            office=get_office_session(self.request), is_active=True)
 
     def get_queryset(self):
         court_district = self.forwarded.get('court_district', None)
@@ -809,7 +768,7 @@ class OrganSelect2Autocomplete(autocomplete.Select2QuerySetSequenceView):
 class OrganFilterSelect2Autocomplete(OrganSelect2Autocomplete):
     @property
     def base_queryset(self):
-        return filter_valid_choice_form(Organ.objects.filter(office=get_office_session(self.request)))
+        return Organ.objects.filter(office=get_office_session(self.request))
 
 
 class CourtDistrictAutocomplete(TypeaHeadGenericSearch):
@@ -835,7 +794,7 @@ class CourtDistrictAutocomplete(TypeaHeadGenericSearch):
 class CourtDistrictSelect2Autocomplete(autocomplete.Select2QuerySetView):
     @property
     def base_queryset(self):
-        return filter_valid_choice_form(CourtDistrict.objects.filter(is_active=True)).annotate(
+        return CourtDistrict.objects.filter(is_active=True).annotate(
             court_district_str=Concat(
                 'name', V(' ('), 'state__initials', V(')'),
                 output_field=CharField()))
@@ -862,7 +821,7 @@ class CourtDistrictSelect2Autocomplete(autocomplete.Select2QuerySetView):
 class CourtDistrictFilterSelect2Autocomplete(CourtDistrictSelect2Autocomplete):
     @property
     def base_queryset(self):
-        return filter_valid_choice_form(CourtDistrict.objects.all()).annotate(
+        return CourtDistrict.objects.all().annotate(
             court_district_str=Concat(
                 'name', V(' ('), 'state__initials', V(')'),
                 output_field=CharField()))
@@ -1099,9 +1058,9 @@ class TypeaHeadCourtDistrictComplementSearch(TypeaHeadGenericSearch):
 class CourtDistrictComplementSelect2Autocomplete(autocomplete.Select2QuerySetView):
     @property
     def base_queryset(self):
-        return filter_valid_choice_form(CourtDistrictComplement.objects.filter(
+        return CourtDistrictComplement.objects.filter(
             is_active=True,
-            office=get_office_session(self.request)))
+            office=get_office_session(self.request))
 
     def get_queryset(self):
         court_district = self.forwarded.get('court_district', None)
@@ -1131,8 +1090,8 @@ class CourtDistrictComplementSelect2Autocomplete(autocomplete.Select2QuerySetVie
 class CourtDistrictComplementFilterSelect2Autocomplete(CourtDistrictComplementSelect2Autocomplete):
     @property
     def base_queryset(self):
-        return filter_valid_choice_form(CourtDistrictComplement.objects.filter(
-            office=get_office_session(self.request)))
+        return CourtDistrictComplement.objects.filter(
+            office=get_office_session(self.request))
 
 
 class LawSuitCreateTaskBulkCreate(View):

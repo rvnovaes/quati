@@ -7,7 +7,7 @@
         <field name="username" type="CharField">invalid_user</field>
         <field name="first_name" type="CharField"></field>
         <field name="last_name" type="CharField"></field>
-        <field name="email" type="CharField">invalid_user@mttech.com.br</field>
+        <field name="email" type="CharField">invalid_user@labp2.direito.ufmg.br</field>
         <field name="is_staff" type="BooleanField">True</field>
         <field name="is_active" type="BooleanField">True</field>
         <field name="date_joined" type="DateTimeField">2017-09-05T17:28:15.694945+00:00</field>
@@ -20,8 +20,8 @@
         <field name="is_superuser" type="BooleanField">True</field>
         <field name="username" type="CharField">admin</field>
         <field name="first_name" type="CharField">Administrador</field>
-        <field name="last_name" type="CharField">Easy Lawyer</field>
-        <field name="email" type="CharField">admin@mttech.com.br</field>
+        <field name="last_name" type="CharField">Quati</field>
+        <field name="email" type="CharField">admin@labp2.direito.ufmg.br</field>
         <field name="is_staff" type="BooleanField">True</field>
         <field name="is_active" type="BooleanField">True</field>
         <field name="date_joined" type="DateTimeField">2017-09-05T17:28:15.850862+00:00</field>

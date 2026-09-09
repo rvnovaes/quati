@@ -1,7 +1,7 @@
 import os
 import json
 from enum import Enum
-from django.db import transaction
+from django.db import router, transaction
 import uuid
 import pickle
 from django.conf import settings
@@ -18,13 +18,13 @@ from chat.models import Chat
 from billing.models import Charge
 from decimal import Decimal
 from .schemas import *
-from django.contrib.postgres.fields import JSONField, ArrayField
+from django.contrib.postgres.fields import ArrayField
+from django.db.models import JSONField
 from django.forms import MultipleChoiceField
 from .mail import TaskCompanyRepresentativeChangeMail
 from simple_history.models import HistoricalRecords
 from core.models import BaseHistoricalModel, NotesMixin
 from financial.enums import CategoryPrice, RateType
-from jsonfield import JSONField as JSF
 
 
 class ChoiceArrayField(ArrayField):
@@ -210,6 +210,10 @@ class MailRecipients(Enum):
         return [(x.name, x.value) for x in cls]
 
 
+def default_characteristics():
+    return json.dumps(CHARACTERISTICS, indent=4)
+
+
 class TypeTaskMain(models.Model):
     is_hearing = models.BooleanField(verbose_name='É audiência', default=False)
     name = models.CharField(
@@ -222,7 +226,7 @@ class TypeTaskMain(models.Model):
         null=True,
         blank=True,
         verbose_name='Características disponíveis',
-        default=json.dumps(CHARACTERISTICS, indent=4))
+        default=default_characteristics)
 
     class Meta:
         ordering = ('name',)
@@ -247,14 +251,14 @@ class TypeTask(Audit, LegacyCode, OfficeMixin):
         'survey.Survey',
         null=True,
         blank=True,
-        verbose_name='Formulário do correspondente')
+        verbose_name='Formulário do correspondente', on_delete=models.PROTECT)
 
     survey_company_representative = models.ForeignKey(
         'survey.Survey',
         null=True,
         blank=True,
         related_name='type_tasks_person_company_representative',
-        verbose_name='Formulário do preposto')
+        verbose_name='Formulário do preposto', on_delete=models.PROTECT)
 
     office = models.ForeignKey(
         Office,
@@ -417,6 +421,8 @@ class TaskBase(Audit, LegacyCode, OfficeMixin):
 
     @property
     def get_latest_child_not_refused(self):
+        if not self.pk:
+            return None
         if self.child.exists() and self.child.latest('pk').task_status not in [
             TaskStatus.REFUSED.__str__(),
             TaskStatus.REFUSED_SERVICE.__str__()
@@ -428,7 +434,7 @@ class TaskBase(Audit, LegacyCode, OfficeMixin):
 class Task(TaskBase):
     TASK_NUMBER_SEQUENCE = 'task_task_task_number'
 
-    survey_result = JSF(
+    survey_result = models.JSONField(
         verbose_name=u'Respotas do Formulário', blank=True, null=True)
     amount_delegated = models.DecimalField(
         null=False,
@@ -600,14 +606,14 @@ class Task(TaskBase):
     def send_mail_new_company_representative(instance):
         if instance.person_company_representative and instance.person_company_representative.get_emails():
             email = TaskCompanyRepresentativeChangeMail(
-                instance.person_company_representative.get_emails(), instance, 'd-edf08ba833514b3a99311f092eba7cc7')
+                instance.person_company_representative.get_emails(), instance, 'mail/task_company_representative_new.html')
             email.send_mail()
 
     @staticmethod
     def send_mail_old_company_representative(instance):
         if instance.person_company_representative and instance.person_company_representative.get_emails():
             email = TaskCompanyRepresentativeChangeMail(
-                instance.person_company_representative.get_emails(), instance, 'd-77a5f2906dca4f3cbd51b98a464eabb1')
+                instance.person_company_representative.get_emails(), instance, 'mail/task_company_representative_old.html')
             email.send_mail()
 
     def on_change_person_company_representative(self):
@@ -673,7 +679,7 @@ class Task(TaskBase):
 
 class TaskFeedback(models.Model):
     feedback_date = models.DateTimeField(auto_now_add=True)
-    task = models.ForeignKey('Task', verbose_name='OS')
+    task = models.ForeignKey('Task', verbose_name='OS', on_delete=models.PROTECT)
     rating = models.SmallIntegerField(
         verbose_name='Nota', choices=[(x, x) for x in range(1, 6)])
     comment = models.TextField(null=True, verbose_name='Comentário')
@@ -707,8 +713,8 @@ class EcmTask(models.Model):
     que fazer uma migração gigante que demande a exclusão de
     ECMs duplicados.
     """
-    task = models.ForeignKey('Task')
-    ecm = models.ForeignKey('Ecm')
+    task = models.ForeignKey('Task', on_delete=models.PROTECT)
+    ecm = models.ForeignKey('Ecm', on_delete=models.PROTECT)
 
 
 class Ecm(Audit, LegacyCode):
@@ -765,19 +771,24 @@ class Ecm(Audit, LegacyCode):
                 contents = pfile.read()
             return contents
 
-    def delete(self, *args, **kwargs):
-        if self.legacy_code:
-            raise ValidationError(
-                "Não é possível apagar um arquivo que foi vinculado a outro sistema."
-            )
+    def delete(self, using=None, keep_parents=False):
+        using = using or router.db_for_write(type(self), instance=self)
+        with transaction.atomic(using=using):
+            # Lock before checking links; uploads always create an own-task link.
+            current = type(self).objects.using(using).select_for_update().get(pk=self.pk)
+            if current.legacy_code:
+                raise ValidationError(
+                    "Não é possível apagar um arquivo que foi vinculado a outro sistema.")
+            copies = type(self).objects.using(using).exclude(pk=self.pk)
+            if (current.ecm_related_id or copies.filter(ecm_related_id=self.pk).exists()
+                    or copies.filter(path=current.path.name).exists()):
+                raise ValidationError(
+                    "Não é possível excluir um anexo que possui cópias vinculadas.")
 
-        # Após apagar um Ecm devemos apagar o arquivo local caso o mesmo ainda esteja no disco.
-        # O arquivo continua no disco em alguns casos pois ele pode ser ter sido criado antes de
-        # utilizarmos o S3.
-        if self.id is None and self.local_file_exists():
-            os.remove(self.local_file_path)
-
-        return super().delete(*args, **kwargs)
+            EcmTask.objects.using(using).filter(ecm_id=self.pk, task_id=current.task_id).delete()
+            # Other-task links remain protected. A failure restores the own-task
+            # links too; django-cleanup removes the file only after commit.
+            return super().delete(using=using, keep_parents=keep_parents)
 
     def download(self):
         """Baixamos o arquivo do S3 caso ele não exista localmente"""
@@ -928,7 +939,7 @@ class Filter(Audit):
 
 class TaskWorkflow(Audit):
     custtom_settings = models.ForeignKey(
-        CustomSettings, related_name='task_workflows')
+        CustomSettings, related_name='task_workflows', on_delete=models.PROTECT)
     task_from = models.CharField(
         verbose_name='Do status',
         null=False,
@@ -942,12 +953,12 @@ class TaskWorkflow(Audit):
         choices=((x.value, x.name.title()) for x in TaskStatus),
         default=TaskStatus.REQUESTED)
 
-    responsible_user = models.ForeignKey(User)
+    responsible_user = models.ForeignKey(User, on_delete=models.PROTECT)
 
 
 class TaskShowStatus(Audit):
     custtom_settings = models.ForeignKey(
-        CustomSettings, related_name='task_status_show')
+        CustomSettings, related_name='task_status_show', on_delete=models.PROTECT)
     status_to_show = models.CharField(
         verbose_name='Mostrar status',
         null=False,
@@ -955,14 +966,14 @@ class TaskShowStatus(Audit):
         choices=((x.value, x.name.title()) for x in TaskStatus),
         default=TaskStatus.REQUESTED)
     send_mail_template = models.ForeignKey(
-        EmailTemplate, verbose_name='Template a enviar', blank=True, null=True)
+        EmailTemplate, verbose_name='Template a enviar', blank=True, null=True, on_delete=models.PROTECT)
     mail_recipients = ChoiceArrayField(
         base_field=models.CharField(
             null=True,
             verbose_name='Destinatários do e-mail',
             max_length=256,
             choices=((x.name, x.value) for x in MailRecipients)),
-        default=[])
+        default=list)
 
     class Meta:
         unique_together = ('status_to_show', 'custtom_settings')
@@ -971,4 +982,4 @@ class TaskShowStatus(Audit):
 class TaskSurveyAnswer(Audit):
     tasks = models.ManyToManyField(Task, blank=True)
     survey = models.ForeignKey('survey.Survey', on_delete=models.CASCADE, null=True, blank=True)
-    survey_result = JSF(verbose_name=u'Respotas do Formulário', blank=True, null=True)
+    survey_result = models.JSONField(verbose_name=u'Respotas do Formulário', blank=True, null=True)

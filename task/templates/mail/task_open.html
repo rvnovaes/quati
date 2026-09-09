@@ -1,0 +1,28 @@
+{% extends 'mail/base.html' %}
+{% load static %}
+{% block content %}
+<h2>{{ title_type_service }}</h2><p>Uma nova providência foi delegada ao seu escritório no <strong>{{ project_name }}</strong>.</p>
+<table width="100%" cellpadding="4" style="border-collapse:collapse;font-size:14px;">
+  <tr><td><strong>OS:</strong></td><td>{{ task_number }}</td></tr>
+  <tr><td><strong>Tipo de serviço:</strong></td><td>{{ type_task }}</td></tr>
+  {% if description %}<tr><td valign="top"><strong>Descrição:</strong></td><td>{{ description|linebreaksbr }}</td></tr>{% endif %}
+  {% if final_deadline_date %}<tr><td><strong>Prazo fatal:</strong></td><td>{{ final_deadline_date }}</td></tr>{% endif %}
+  {% if delegation_date %}<tr><td><strong>Data de delegação:</strong></td><td>{{ delegation_date }}</td></tr>{% endif %}
+  {% if client %}<tr><td><strong>Cliente:</strong></td><td>{{ client }}</td></tr>{% endif %}
+  {% if opposing_party %}<tr><td><strong>Parte adversa:</strong></td><td>{{ opposing_party }}</td></tr>{% endif %}
+  {% if lawsuit_number %}<tr><td><strong>Processo:</strong></td><td>{{ lawsuit_number }}</td></tr>{% endif %}
+  {% if organ %}<tr><td><strong>Órgão:</strong></td><td>{{ organ }}</td></tr>{% endif %}
+  {% if court_division %}<tr><td><strong>Vara:</strong></td><td>{{ court_division }}</td></tr>{% endif %}
+  {% if court_district %}<tr><td><strong>Comarca:</strong></td><td>{{ court_district }}{% if state %} - {{ state }}{% endif %}</td></tr>{% endif %}
+  {% if city %}<tr><td><strong>Cidade:</strong></td><td>{{ city }}</td></tr>{% endif %}
+  {% if court_district_complement %}<tr><td><strong>Complemento da comarca:</strong></td><td>{{ court_district_complement }}</td></tr>{% endif %}
+  {% if address %}<tr><td><strong>Endereço:</strong></td><td>{{ address }}</td></tr>{% endif %}
+  {% if performance_place %}<tr><td><strong>Local de cumprimento:</strong></td><td>{{ performance_place }}</td></tr>{% endif %}
+</table>
+
+<h3>Contratante</h3>
+<p>{{ office_name }}<br>{% if office_phone %}Telefone: {{ office_phone }}<br>{% endif %}{% if office_email %}E-mail: {{ office_email }}<br>{% endif %}{% if office_address %}{{ office_address }}{% endif %}</p>
+<h3>Correspondente</h3>
+<p>{{ office_correspondent_name }}<br>{% if office_correspondent_phone %}Telefone: {{ office_correspondent_phone }}<br>{% endif %}{% if office_correspondent_email %}E-mail: {{ office_correspondent_email }}<br>{% endif %}{% if office_correspondent_address %}{{ office_correspondent_address }}{% endif %}</p>
+<table width="100%"><tr><td><p style="text-align:center;margin:24px 0;"><a href="{{ btn_accpeted }}" style="background:#26a69a;color:#fff;padding:12px 24px;text-decoration:none;border-radius:4px;font-weight:bold;">Aceitar</a></p></td><td><p style="text-align:center;margin:24px 0;"><a href="{{ btn_refused }}" style="background:#ef5350;color:#fff;padding:12px 24px;text-decoration:none;border-radius:4px;font-weight:bold;">Recusar</a></p></td></tr></table><p>Para ver os detalhes sem fazer login, <a href="{{ external_task_url }}">clique aqui</a>. Se você já possui acesso ao sistema, <a href="{{ task_url }}">acesse a OS</a>.</p>
+{% endblock content %}

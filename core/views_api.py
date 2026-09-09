@@ -5,17 +5,12 @@ from oauth2_provider.contrib.rest_framework import OAuth2Authentication, TokenHa
 from rest_framework.response import Response
 from rest_framework.decorators import permission_classes, api_view
 from rest_framework.filters import OrderingFilter
-from core.views import remove_invalid_registry
 from django.contrib.auth.models import Group
 
 
 class OfficeMixinViewSet(viewsets.ModelViewSet):
 
-    @remove_invalid_registry
     def get_queryset(self, *args, **kwargs):
-        invalid_registry = kwargs.get('remove_invalid', None)
-        if invalid_registry:
-            self.queryset = self.queryset.exclude(id=invalid_registry)
         if self.request.auth.application.office:
             return self.queryset.filter(office=self.request.auth.application.office)
         return super().get_queryset()
@@ -39,11 +34,7 @@ class PersonViewSet(viewsets.ModelViewSet):
     serializer_class = PersonSerializer
     model = Person
 
-    @remove_invalid_registry
     def get_queryset(self, *args, **kwargs):
-        invalid_registry = kwargs.get('remove_invalid', None)
-        if invalid_registry:
-            self.queryset = self.queryset.exclude(id=invalid_registry)
         return self.queryset.filter(offices=self.request.auth.application.office)
 
 
@@ -74,4 +65,3 @@ class OfficeViewSet(viewsets.ReadOnlyModelViewSet):
         if q:
             return Office.objects.filter(legal_name__icontains=q)
         return Office.objects.all()
-

@@ -18,7 +18,7 @@ def get_modelname_from_object(object):
     return get_model_name(object)
 
 
-@register.assignment_tag
+@register.simple_tag
 def get_attachments(object, object_id):
     return Attachment.objects.filter(
         model_name=get_model_name(object),

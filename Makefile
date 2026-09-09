@@ -1,89 +1,83 @@
-build:
-	docker-compose build builder luigi
-	@docker-compose build certbot || true
+COMPOSE = docker compose
+MANAGE = $(COMPOSE) run --rm web python manage.py
 
-check_compose_override:
-	@test -s docker-compose.override.yml || { echo "docker-compose.override.yml não foi encontrado. Você precisa rodar o comando 'make set_env_development' para começar."; exit 1;}
+.PHONY: help build up down restart logs ps shell psql migrate migrations collectstatic \
+        seed seed_demo load_fixtures load_fixtures0 createsuperuser bootstrap test check \
+        set_env_development set_env_production check_env
 
-collectstatic:
-	docker-compose run web python manage.py collectstatic --noinput
+help:
+	@grep -E '^[a-zA-Z0-9_-]+:' Makefile | cut -d: -f1 | sort | tr '\n' ' '; echo
 
-create_certificate:
-	docker-compose run certbot certbot certonly --webroot -w /tmp/www -d mtostes.ezlawyer.com.br -m contato@ezlawyer.com.br --agree-tos
-
-create_certificate_teste:
-	docker-compose run certbot certbot certonly --webroot -w /tmp/www -d teste.ezlawyer.com.br -m contato@ezlawyer.com.br --agree-tos
-
-deploy: check_compose_override build restart migrate collectstatic load_fixtures
-
-dev_mode: restart
-	docker-compose stop web ws-worker
-	docker-compose run web bash -c "ip addr; python manage.py runserver 0:8005"
-
-local_sqlserver:
-	ln -s docker-compose.sqlserver.yml docker-compose.override.yml
-
-logs:
-	docker-compose logs --follow
-
-migrate:
-	docker-compose run web python manage.py migrate --noinput
-
-migrations:
-	docker-compose run web python manage.py makemigrations --noinput
-
-load_fixtures0:
-	docker-compose run web python manage.py loaddata auth_user office country state court_district
-	docker-compose run web python manage.py ezl_create_groups_and_permissions
-
-load_fixtures:
-	docker-compose run web python manage.py ezl_create_groups_and_permissions
-
-create_groups_and_permissions: 
-	docker-compose run web python manage.py ezl_create_groups_and_permissions
-
-adjust_contact_mechanism:
-	docker-compose run web python manage.py adjust_contact_mechanism
-ps:
-	docker-compose ps
-
-psql:
-	docker-compose run web bash -c "PGPASSWORD=ezl psql -h db -U ezl"
-
-remove:
-	docker-compose rm -f web
-	docker-compose rm -f certbot || true
-
-run: check_compose_override
-	docker-compose up -d
-
-restart:
-	docker-compose stop
-	docker-compose up -d
-
-restart_web:
-	docker-compose restart web ws ws-worker
+check_env:
+	@test -s .env || { echo ".env não encontrado. Copie .env.example para .env e ajuste."; exit 1; }
+	@test -e docker-compose.override.yml || { echo "docker-compose.override.yml não encontrado. Rode 'make set_env_development' ou 'make set_env_production'."; exit 1; }
 
 set_env_development:
-	@rm docker-compose.override.yml || true
+	@rm -f docker-compose.override.yml
 	ln -s docker-compose.development.yml docker-compose.override.yml
 
 set_env_production:
-	@rm docker-compose.override.yml || true
+	@rm -f docker-compose.override.yml
 	ln -s docker-compose.production.yml docker-compose.override.yml
 
-set_env_teste:
-	@rm docker-compose.override.yml || true
-	ln -s docker-compose.teste.yml docker-compose.override.yml
+build: check_env
+	$(COMPOSE) build web
 
-shell:
-	docker-compose run web bash
+up: check_env
+	$(COMPOSE) up -d
 
-stop_web:
-	docker-compose stop web nginx
+down:
+	$(COMPOSE) down
 
-stop:
-	docker-compose stop
+restart:
+	$(COMPOSE) restart web ws worker beat
 
-test:
-	docker-compose run web python manage.py test --parallel --keepdb
+logs:
+	$(COMPOSE) logs --follow --tail=100
+
+ps:
+	$(COMPOSE) ps
+
+shell: check_env
+	$(COMPOSE) run --rm web bash
+
+psql: check_env
+	$(COMPOSE) exec db psql -U $${DB_USER:-ezl} $${DB_NAME:-ezl}
+
+migrate: check_env
+	$(MANAGE) migrate --noinput
+
+migrations: check_env
+	$(MANAGE) makemigrations --noinput
+
+collectstatic: check_env
+	$(MANAGE) collectstatic --noinput
+
+seed: check_env
+	$(COMPOSE) run --rm web scripts/seed_db.sh
+
+seed_demo: check_env
+	$(COMPOSE) run --rm web python manage.py seed_demo
+
+load_fixtures0: seed
+
+load_fixtures: check_env
+	$(MANAGE) ezl_create_groups_and_permissions
+
+createsuperuser: check_env
+	$(MANAGE) createsuperuser
+
+check: check_env
+	$(COMPOSE) run --rm web python -W error::DeprecationWarning manage.py check
+	$(MANAGE) makemigrations --check --dry-run
+
+test: check_env
+	$(COMPOSE) run --rm web pytest
+
+# Primeira subida: constrói, sobe infraestrutura, migra, carrega fixtures e sobe tudo.
+bootstrap: check_env build
+	$(COMPOSE) up -d db redis queues
+	$(MAKE) seed
+	$(MANAGE) collectstatic --noinput
+	$(COMPOSE) up -d
+	@echo "Pronto. Web: http://localhost:8000  nginx: http://localhost:8080  Mailpit: http://localhost:8026  Flower: http://localhost:5555"

@@ -60,13 +60,7 @@
         {% if view.model.use_upload %}
             <!-- UPLOADS SCRIPTS  -->
             {% if form.documents %}
-                <script src="{% static "ajaxuploader/js/fileuploader.js" %}?rev={{request.REVIEW}}"></script>
-                <script src="{% static "file_form/file_form.js" %}?rev={{request.REVIEW}}"></script>
-                <script>
-                   $(function() {
-                       initUploadFields($('#object_form'));
-                   });
-                </script>
+                {# upload nativo: nenhum script adicional necessário #}
             {% else %}
                 {% include 'ecm/javascripts.html' %}
 

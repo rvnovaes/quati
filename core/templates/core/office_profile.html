@@ -1,7 +1,7 @@
 {% extends 'skeleton/base.html' %}
-{% load render_table from django_tables2 %}
+{% load render_table from django_tables2 %}{% load ezl_tables %}
 {% load static %}
-{% load querystring from django_tables2 %}
+{% load querystring from ezl_tables %}
 {% load bootstrap3 %}
 {% load core_filters core_match %}
 {%block content%}
@@ -862,7 +862,7 @@
 
 
 {% block extra_stylesheets %}
-    <link href="/static/autocomplete_light/vendor/select2/dist/css/select2.css" type="text/css" media="all" rel="stylesheet" />
+    <link href="/static/admin/css/vendor/select2/select2.css" type="text/css" media="all" rel="stylesheet" />
     <link href="/static/autocomplete_light/select2.css" type="text/css" media="all" rel="stylesheet" />
 	<style type="text/css">
 		.container-fluid {

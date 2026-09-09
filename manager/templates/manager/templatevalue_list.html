@@ -43,8 +43,8 @@
 {% block extra_scripts %}
     <script type="text/javascript" src="/static/autocomplete_light/jquery.init.js"></script>
     <script type="text/javascript" src="/static/autocomplete_light/autocomplete.init.js"></script>
-    <script type="text/javascript" src="/static/autocomplete_light/vendor/select2/dist/js/select2.full.js"></script>
-    <script type="text/javascript" src="/static/autocomplete_light/vendor/select2/dist/js/i18n/pt-BR.js"></script>
+    <script type="text/javascript" src="/static/admin/js/vendor/select2/select2.full.js"></script>
+    <script type="text/javascript" src="/static/autocomplete_light/i18n/pt-BR.js"></script>
     <script type="text/javascript" src="/static/autocomplete_light/select2.js"></script>'
     <script src="{% static 'skeleton/plugins/bower_components/datatables/jquery.dataTables.min.js' %}?rev={{request.REVIEW}}"></script>
     <script src="{% static 'manager/template-value.js' %}?rev={{request.REVIEW}}"></script>
@@ -54,7 +54,7 @@
 {% endblock %}
 
 {% block extra_stylesheets %}
-    <link href="/static/autocomplete_light/vendor/select2/dist/css/select2.css" type="text/css" media="all" rel="stylesheet" />
+    <link href="/static/admin/css/vendor/select2/select2.css" type="text/css" media="all" rel="stylesheet" />
     <link href="/static/autocomplete_light/select2.css" type="text/css" media="all" rel="stylesheet" />
     <link href="/static/select2.css" type="text/css" media="all" rel="stylesheet" />
 {% endblock %}

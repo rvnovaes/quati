@@ -69,7 +69,7 @@ class DashboardETL(Audit, OfficeMixin):
 
 class ErrorETL(Audit):
     log = models.ForeignKey(
-        DashboardETL, verbose_name='Erros', related_name='errors')
+        DashboardETL, verbose_name='Erros', related_name='errors', on_delete=models.PROTECT)
     error = models.TextField(
         verbose_name='Descrição do erro',
         null=True,

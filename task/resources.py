@@ -102,7 +102,7 @@ class TaskResource(resources.ModelResource):
         """
         return TaskResult
 
-    def before_import(self, dataset, using_transactions, dry_run, **kwargs):
+    def before_import(self, dataset, **kwargs):
         self.office = kwargs['office']
         self.create_user = kwargs['create_user']
         self.office_id = self.office.id

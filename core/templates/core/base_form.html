@@ -1,9 +1,8 @@
 {% extends "inicial.html" %}
 
-{% load core_filters material_form staticfiles ecm_tags %}
+{% load core_filters static ecm_tags %}
 
 {% block css_head %}
-    {% include 'material/includes/material_css.html' %}
     {{ block.super }}
     <link rel="stylesheet" href="{% static "chosen/chosen.min.css" %}">
     <link rel="stylesheet" href="{% static "chosen/chosen-material-theme.min.css" %}">
@@ -18,7 +17,6 @@
     <script src="{% static "js/jquery-2.1.1.min.js" %}?rev={{request.REVIEW}}"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/survey-jquery/0.12.23/survey.jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
-    {% include 'material/includes/material_js.html' %}
     <script src="{% static "libs/toastr/build/toastr.min.js" %}?rev={{request.REVIEW}}"></script>
 {#    Apesar de repetidos, os scripts a seguir são necessário para renderização do form #}
 {#    TODO: Refatorar os blocos head, extra_head, extra_js #}
@@ -99,7 +97,7 @@
                 </div>
                 <div class="panel-body">
                     {% block form_container %}
-                        {% form %}{% endform %}
+                        {% include 'core/includes/form_rows.html' %}
                 </div>
             </div>
         </div>

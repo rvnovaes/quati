@@ -4,7 +4,7 @@ from core.models import Person, State, City
 from financial.models import CostCenter
 from .models import (TypeMovement, Instance, Movement, Folder, CourtDistrict, LawSuit, CourtDivision, Organ,
                      CourtDistrictComplement)
-from core.utils import filter_valid_choice_form, get_office_field, get_office_session
+from core.utils import get_office_field, get_office_session
 from localflavor.br.forms import BRCNPJField
 from core.widgets import TypeaHeadForeignKeyWidget, MDSelect
 from core.forms import BaseForm
@@ -46,8 +46,7 @@ class MovementForm(BaseForm):
         fields = ['office', 'type_movement', 'is_active', 'legacy_code']
 
     type_movement = forms.ModelChoiceField(
-        queryset=filter_valid_choice_form(
-            TypeMovement.objects.filter(is_active=True)).order_by('name'),
+        queryset=TypeMovement.objects.filter(is_active=True).order_by('name'),
         empty_label=u"Selecione...",
     )
 
@@ -113,10 +112,9 @@ class LawSuitForm(BaseForm):
 
     person_lawyer = forms.ModelChoiceField(
         empty_label=u"Selecione",
-        queryset=filter_valid_choice_form(
-            Person.objects.filter(
-                is_active=True,
-                is_lawyer=True)).only('legal_name').order_by('name'),
+        queryset=Person.objects.filter(
+            is_active=True,
+            is_lawyer=True).only('legal_name').order_by('name'),
         required=False)
     court_district = forms.ModelChoiceField(label='Comarca',
                                             required=False,
@@ -138,13 +136,11 @@ class LawSuitForm(BaseForm):
                                    widget=MDSelect(url='/processos/organ_autocomplete', ),
                                    queryset=Organ.objects.all(), )
     instance = forms.ModelChoiceField(
-        queryset=filter_valid_choice_form(
-            Instance.objects.filter(is_active=True)).order_by('name'),
+        queryset=Instance.objects.filter(is_active=True).order_by('name'),
         empty_label=u"Selecione",
         required=False)
     court_division = forms.ModelChoiceField(
-        queryset=filter_valid_choice_form(
-            CourtDivision.objects.filter(is_active=True)).order_by('name'),
+        queryset=CourtDivision.objects.filter(is_active=True).order_by('name'),
         empty_label=u"Selecione",
         required=False)
     opposing_party = forms.CharField(required=False)
@@ -171,8 +167,7 @@ class CourtDistrictForm(BaseForm):
         fields = ['name', 'state', 'is_active']
 
     state = forms.ModelChoiceField(
-        queryset=filter_valid_choice_form(
-            State.objects.filter(is_active=True)),
+        queryset=State.objects.filter(is_active=True),
         empty_label=u"Selecione")
 
 
@@ -181,7 +176,7 @@ class OrganForm(BaseForm):
         super(OrganForm, self).__init__(*args, **kwargs)
         self.fields['office'] = get_office_field(self.request)
         for field_name, field in self.fields.items():
-            if field_name is 'cnpj':
+            if field_name == 'cnpj':
                 field.initial = self.instance.cpf_cnpj
 
     cpf_cnpj = BRCNPJField(

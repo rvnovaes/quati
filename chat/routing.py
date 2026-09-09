@@ -1,8 +1,7 @@
-from channels.routing import route
-from chat.consumers import ws_message, ws_connect, ws_disconnect
+from django.urls import re_path
 
-channel_routing = [
-    route('websocket.connect', ws_connect, path=r"^/ws/(?P<label>)"),
-    route('websocket.receive', ws_message, path=r"^/ws/(?P<label>)"),
-    route('WebSocket.disconnect', ws_disconnect, path=r"^/ws/(?P<label>)")
+from chat.consumers import ChatConsumer
+
+websocket_urlpatterns = [
+    re_path(r'^ws/$', ChatConsumer.as_asgi()),
 ]

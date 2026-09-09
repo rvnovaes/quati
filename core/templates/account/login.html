@@ -1,190 +1,102 @@
 {% load static %}
 {% load socialaccount %}
-
-<!DOCTYPE html>  
-<html lang="en">
+<!DOCTYPE html>
+<html lang="pt-br">
 <head>
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="">
-<meta name="author" content="">
-<link rel="icon" type="image/png" sizes="16x16" href="{% static 'img/favicon.png' %}">
-<title>Easy Lawyer (EZL)</title>
-<!-- Bootstrap Core CSS -->
+<link rel="icon" type="image/png" sizes="32x32" href="{% static 'img/favicon.png' %}">
+<link rel="apple-touch-icon" href="{% static 'img/apple-touch-icon.png' %}">
+<link rel="shortcut icon" href="{% static 'img/favicon.ico' %}">
+<title>Entrar · Quati</title>
+<script>
+    (function () { try { var t = localStorage.getItem('quati-theme'); if (t === 'light' || t === 'dark') { document.documentElement.setAttribute('data-quati-theme', t); } } catch (e) {} })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700&family=Manrope:wght@400;500;600;700&display=swap">
 <link href="{% static 'skeleton/bootstrap/dist/css/bootstrap.min.css' %}" rel="stylesheet">
-<!-- animation CSS -->
-<link href="{% static 'skeleton/css/animate.css' %}" rel="stylesheet">
-<!-- Custom CSS -->
 <link href="{% static 'skeleton/css/style.css' %}" rel="stylesheet">
-<!-- color CSS -->
-<link href="{% static 'skeleton/css/colors/ezl.css' %}" id="theme" rel="stylesheet">
+<link href="{% static 'skeleton/css/colors/ezl.css' %}" rel="stylesheet">
 <link href="{% static 'libs/toastr/build/toastr.min.css' %}" rel="stylesheet">
-<!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
-<!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-<!--[if lt IE 9]>
-    <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
-    <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
-<![endif]-->
-
-<style type="text/css">
-    .new-login-box {      
-      margin-top: 20px !important;
-    }
-    .new-login-register {
-      position: absolute;      
-    }
-    .new-login-register .lg-info-panel {      
-      background: url("{% static 'skeleton/images/login-register.jpg'%}") center center/cover no-repeat !important;)
-    }
-    #logo {
-        margin-left: 28px;
-        margin-top: 20px;
-    }    
-    .lg-content {
-      margin-top: 150px !important;
-    }
-    .social {
-        border: 1px solid #4285f4;
-        background-color: #4285f4;
-    }
-    .social:hover {
-        opacity: 0.8;
-    }
-</style>
-
+<link href="{% static 'quati/quati.css' %}?rev={{request.REVIEW}}" rel="stylesheet">
+<script src="{% static 'quati/theme.js' %}?rev={{request.REVIEW}}"></script>
 </head>
-<body>
-<!-- Preloader -->
-<div class="preloader">
-    <div class="cssload-speeding-wheel"></div>
-</div>
-<section id="wrapper" class="new-login-register">
-    <div class="lg-info-panel">
-        <div class="inner-panel">
-            <a href="javascript:void(0)" class="p-20 di" id="logo">
-                <img src="{% static 'img/logo_ezl_dark.png' class='dark-logo'%}">
-            </a>
-            <div class="lg-content">
-                <h2>Plataforma de correspondentes e serviços jurídicos</h2>
-                <p class="text-muted">Gerencie sua própria rede de correspondentes, ofereça seus serviços ou contrate diretamente nossa logística jurídica. Software como serviço - SAAS sem custo de implantação ou de infraestrutura. Sistema na nuvem - cloud based. Sem custos fixos - pay-as-you-go.</p>
-            </div>
+<body class="q-login-page">
+    <aside class="q-login-side">
+        <a href="{% url 'account_login' %}" style="text-decoration:none">{% include 'skeleton/includes/brand.html' with tagline=True %}</a>
+        <div>
+            <h2>Toda providência chega ao destino.</h2>
+            <p>Cadastre a ordem de serviço, delegue ao correspondente mais próximo e acompanhe o cumprimento até o pagamento.</p>
         </div>
-    </div>
-    <div class="new-login-box">
-        <div class="white-box p-t-0 p-b-0 m-b-0">
-            <form class="form-horizontal new-lg-form p-t-0" id="loginform" action="{% url 'account_login' %}" method="POST">{% csrf_token %}
-                <div class="col-xs-12">
-                    <div class="form-group text-center m-t-20">
-                        <h3 class="box-title m-b-0">Informe seus dados abaixo</h3>
-                        <small>Clique em entrar após terminar o preenchimento</small>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <div class="col-xs-12">
-                        <label>Usuário</label>
-                        <input class="form-control" type="text" required="" placeholder="Usuário" name="login">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <div class="col-xs-12">
-                        <label>Senha</label>
-                        <input class="form-control" type="password" required="" placeholder="Senha" name="password">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <div class="col-md-12">
-                        <a href="javascript:void(0)" id="to-recover" class="text-dark pull-right"><i class="fa fa-lock m-r-5"></i> Recuperar senha?</a>
-                    </div>
-                </div>
-                <div class="form-group text-center m-t-20">
-                    <div class="col-xs-12">
-                        <button class="btn btn-success btn-lg btn-block text-uppercase waves-effect waves-light" type="submit">Entrar</button>
-                        <div class="row">
-                            <div class="col-sm-5">
-                                <hr>
-                            </div>
-                            <div class="col-sm-2">
-                                <h4>OU</h4>
-                            </div>
-                            <div class="col-sm-5">
-                                <hr>
-                            </div>
-                        </div>
-                        <div class="col-xs-12 text-center p-0" style="height: 50px;">
-                            <div class="social" style="margin-bottom: 0px;">
-                                <a href="/accounts/google/login" class="" data-toggle="tooltip" title="" data-original-title="Login com Google">
-                                    <img src="/static/img/btn_google_dark_normal_ios.png" class="img-responsive">
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-xs-12 p-t-10">
-                        <hr>
-                        <div class="col-xs-12 p-b-20">
-                            <h3 class="box-title m-b-0">Ainda não se cadastrou?</h3>
-                            <small>Clique no botão abaixo e cadastre-se</small>
-                        </div>
-                        <a href="/registrar/" class="btn btn-danger btn-lg btn-block text-uppercase waves-effect waves-light">Cadastre-se</a>
-                    </div>
-                </div>
-            </form>
-        </div>
-        <form class="form-horizontal" id="recoverform" action="{% url 'account_reset_password' %}" method="POST">{% csrf_token %}
-            <div class="form-group ">
-                <div class="col-xs-12">
-                    <h3>Recupere sua senha</h3>
-                    <p class="text-muted">Digite seu usuário e as instruções serão enviadas para você</p>
-                </div>
-            </div>
-            <div class="form-group ">
-                <div class="col-xs-12">
-                    <input class="form-control" required="" placeholder="Usuário" type="text" name="username">
-                </div>
-            </div>
-            <div class="form-group text-center m-t-20">
-                <div class="col-xs-12">
-                    <button class="btn btn-info btn-lg btn-block text-uppercase waves-effect waves-light"
-                            type="submit">Enviar
-                    </button>
-                </div>
-            </div>
-        </form>
-    </div>
-</section>
-<!-- jQuery -->
-<script src="{% static 'skeleton/plugins/bower_components/jquery/dist/jquery.min.js' %}?rev={{request.REVIEW}}"></script>
-<!-- Bootstrap Core JavaScript -->
-<script src="{% static 'skeleton/bootstrap/dist/js/bootstrap.min.js' %}?rev={{request.REVIEW}}"></script>
-<!-- Menu Plugin JavaScript -->
-<script src="{% static 'skeleton/plugins/bower_components/sidebar-nav/dist/sidebar-nav.min.js' %}?rev={{request.REVIEW}}"></script>
+        <img class="q-mascot" src="{% static 'img/quati-mascote.png' %}" alt="Mascote do Quati, um quati de terno com pasta" width="640" height="615">
+    </aside>
 
-<!--slimscroll JavaScript -->
-<script src="{% static 'skeleton/js/jquery.slimscroll.js' %}?rev={{request.REVIEW}}"></script>
-<!--Wave Effects -->
-<script src="{% static 'skeleton/js/waves.js' %}?rev={{request.REVIEW}}"></script>
-<!-- Custom Theme JavaScript -->
-<script src="{% static 'skeleton/js/custom.js' %}?rev={{request.REVIEW}}"></script>
-<!--Style Switcher -->
-<script src="{% static 'skeleton/plugins/bower_components/styleswitcher/jQuery.style.switcher.js' %}?rev={{request.REVIEW}}"></script>
-<!--Toast-->
+    <main class="q-login-form">
+        <a href="#" class="q-btn q-btn-ghost q-login-theme q-theme-toggle" title="Tema escuro" aria-label="Alternar tema">
+            <i class="mdi mdi-weather-night q-moon"></i><i class="mdi mdi-white-balance-sunny q-sun"></i>
+        </a>
+
+        <form id="loginform" action="{% url 'account_login' %}" method="POST">{% csrf_token %}
+            <h3>Entrar no Quati</h3>
+            <p class="q-lead">Use o usuário do seu escritório.</p>
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger">{{ form.non_field_errors|striptags }}</div>
+            {% endif %}
+            <div class="q-field">
+                <label for="id_login">Usuário</label>
+                <input class="form-control" type="text" required id="id_login" name="login" autocomplete="username" autofocus value="{{ form.login.value|default:'' }}">
+            </div>
+            <div class="q-field">
+                <label for="id_password">Senha</label>
+                <input class="form-control" type="password" required id="id_password" name="password" autocomplete="current-password">
+            </div>
+            <div class="q-row-between">
+                <label><input type="checkbox" name="remember" checked> Continuar conectado</label>
+                <a href="javascript:void(0)" id="to-recover">Esqueci a senha</a>
+            </div>
+            {% if redirect_field_value %}
+                <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}">
+            {% endif %}
+            <button class="q-btn q-btn-primary q-btn-block" type="submit">Entrar</button>
+            <div class="q-or">ou</div>
+            <a href="/accounts/google/login" class="q-btn q-btn-ghost q-btn-block">
+                <svg width="16" height="16" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.5l6.7-6.7C35.6 2.5 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.3l7.8 6C12.3 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4 7.1-10 7.1-17.5z"/><path fill="#FBBC05" d="M10.4 28.7A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.2.8-4.7l-7.8-6A24 24 0 0 0 0 24c0 3.9.9 7.5 2.6 10.7l7.8-6z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.9 2.3-8.4 2.3-6.3 0-11.7-4.1-13.6-9.9l-7.8 6C6.5 42.6 14.6 48 24 48z"/></svg>
+                Entrar com Google
+            </a>
+            <div class="q-signup">Seu escritório ainda não usa o Quati? <a href="/registrar/">Crie a conta do escritório</a>.</div>
+        </form>
+
+        <form id="recoverform" action="{% url 'account_reset_password' %}" method="POST">{% csrf_token %}
+            <h3>Recuperar a senha</h3>
+            <p class="q-lead">Informe seu usuário. As instruções vão para o e-mail cadastrado.</p>
+            <div class="q-field">
+                <label for="id_recover_username">Usuário</label>
+                <input class="form-control" required type="text" id="id_recover_username" name="username" autocomplete="username">
+            </div>
+            <button class="q-btn q-btn-primary q-btn-block" type="submit">Enviar instruções</button>
+            <div class="q-signup"><a href="javascript:void(0)" id="to-login">Voltar para o login</a></div>
+        </form>
+    </main>
+    {% include 'skeleton/includes/footer_labp2.html' %}
+
+<script src="{% static 'skeleton/plugins/bower_components/jquery/dist/jquery.min.js' %}?rev={{request.REVIEW}}"></script>
+<script src="{% static 'skeleton/bootstrap/dist/js/bootstrap.min.js' %}?rev={{request.REVIEW}}"></script>
 <script src="{% static 'libs/toastr/build/toastr.min.js' %}?rev={{request.REVIEW}}"></script>
-<script type="text/javascript">
-      $(document).ready(function () {
+<script>
+    $(function () {
+        $('#to-recover').on('click', function () { $('#loginform').hide(); $('#recoverform').show(); $('#id_recover_username').focus(); });
+        $('#to-login').on('click', function () { $('#recoverform').hide(); $('#loginform').show(); });
         {% if form.errors %}
-            {% for field in form %}
-                {% for error in field.errors %}
-                    toastr.error('{{ error }}', 'Erro ao efetuar o login', {timeOut: 5000});
-                {% endfor %}
-            {% endfor %}
+            {% for field in form %}{% for error in field.errors %}
+                toastr.error('{{ error|escapejs }}', 'Não foi possível entrar', {timeOut: 6000});
+            {% endfor %}{% endfor %}
             {% for error in form.non_field_errors %}
-                toastr.error('{{ error }}', 'Erro ao efetuar o login', {timeOut: 5000});
+                toastr.error('{{ error|escapejs }}', 'Não foi possível entrar', {timeOut: 6000});
             {% endfor %}
         {% endif %}
         {% for message in messages %}
-            {% if message.tags == 'add_new_user success' %}
-            swal('Cadastro Finalizado', '{{ message }}');
-            {% endif %}
+            toastr.info('{{ message|escapejs }}');
         {% endfor %}
     });
 </script>

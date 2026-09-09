@@ -2,14 +2,16 @@ from django.contrib.sessions.models import Session
 from django.template.loader import render_to_string
 from django.utils import timezone
 from task.mail import SendMail
-from celery import shared_task, task
-from advwin_models.tasks import MAX_RETRIES, BASE_COUNTDOWN
+from celery import shared_task
 from core.models import ImportXlsFile
 from django.core.management import call_command
 from core.resources import CityResource
 from tablib import Dataset
 import traceback
 import json
+
+MAX_RETRIES = 3
+BASE_COUNTDOWN = 2
 
 
 @shared_task(bind=True, max_retries=MAX_RETRIES)
@@ -34,7 +36,7 @@ def delete_imported_xls(self, xls_file_pk):
     ImportXlsFile.objects.filter(pk=xls_file_pk).delete()
 
 
-@task()
+@shared_task()
 def clear_sessions():
     total = Session.objects.all().count()
     call_command("clearsessions")

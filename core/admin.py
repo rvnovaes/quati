@@ -132,7 +132,6 @@ class OfficeOfficesAdmin(admin.ModelAdmin):
 
 @admin.register(Office)
 class OfficeAdmin(admin.ModelAdmin):
-    filter_horizontal = ['persons', 'offices']
     search_fields = ['legal_name', 'name']
     list_display = ['legal_name', 'cpf_cnpj']
 

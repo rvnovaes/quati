@@ -1,0 +1,5 @@
+{% extends 'mail/base.html' %}
+{% load static %}
+{% block content %}
+<h2>{{ title_type_service }}</h2><p>A providência <strong>{{ task_number }}</strong> ({{ type_task }}) foi retornada {{ by_person }} e precisa de ajustes.</p><p>Prazo fatal: {{ final_deadline_date }}<br>Distribuída por: {{ person_distributed_by }}</p><p style="text-align:center;margin:24px 0;"><a href="{{ task_url }}" style="background:#26a69a;color:#fff;padding:12px 24px;text-decoration:none;border-radius:4px;font-weight:bold;">Ver OS</a></p>
+{% endblock content %}

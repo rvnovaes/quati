@@ -1,0 +1,5 @@
+{% extends 'mail/base.html' %}
+{% load static %}
+{% block content %}
+<h2>Bem-vindo(a), {{ name }}!</h2><p>Seu cadastro no <strong>{{ project_name }}</strong> foi realizado com sucesso.</p><p>Para conhecer o sistema, consulte o <a href="{{ url }}">manual do usuário</a>.</p><p style="text-align:center;margin:24px 0;"><a href="{{ project_link }}" style="background:#26a69a;color:#fff;padding:12px 24px;text-decoration:none;border-radius:4px;font-weight:bold;">Acessar o sistema</a></p>
+{% endblock content %}

@@ -4,7 +4,7 @@
         "pk": 1,
         "fields": {
             "name": "OS FINALIZADA",
-            "template_id": "d-7af22ba0396943729cdcb87e2e9f787c"
+            "template_id": "mail/task_finished.html"
         }
     },
     {
@@ -12,7 +12,7 @@
         "pk": 2,
         "fields": {
             "name": "OS A CUMPRIR",
-            "template_id": "d-ae35cc53722345eaa4a4adf521c3bd81"
+            "template_id": "mail/task_accepted.html"
         }
     },
     {
@@ -20,16 +20,15 @@
         "pk": 3,
         "fields": {
             "name": "OS EM ABERTO",
-            "template_id": "d-a9f3606fb333406c9b907fee244e30a4"
+            "template_id": "mail/task_open.html"
         }
-
     },
     {
         "model": "core.emailtemplate",
         "pk": 4,
         "fields": {
             "name": "OS RECUSADA PELO SERVICE",
-            "template_id": "d-a0687119152c4396894274fcf33c94bc"
+            "template_id": "mail/task_refused_service.html"
         }
     },
     {
@@ -37,7 +36,7 @@
         "pk": 5,
         "fields": {
             "name": "OS RECUSADA",
-            "template_id": "d-f6188c1006af4193aa66f99af71d070b"
+            "template_id": "mail/task_refused.html"
         }
     },
     {
@@ -45,7 +44,7 @@
         "pk": 6,
         "fields": {
             "name": "OS RETORNADA",
-            "template_id": "d-5c0f201b780a4b7ea6d3adfc7eae4e49"
+            "template_id": "mail/task_return.html"
         }
     },
     {
@@ -53,7 +52,7 @@
         "pk": 7,
         "fields": {
             "name": "OS EM ABERTO NORMAL",
-            "template_id": "d-9233ece106b743c08074d1eb5efac1f3"
+            "template_id": "mail/task_open.html"
         }
     }
 ]

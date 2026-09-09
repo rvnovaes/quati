@@ -1,6 +1,0 @@
-SHELL="/bin/bash"
-PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-ENV=production
-
-15 * * * *  cd /app/ && python manage.py run_etl_suit luigi >> /tmp/luigi.log
-0 2 * * *  find /var/log/ezl/etl/ -maxdepth 1 -type f -ctime +14 -exec rm -rf {} \;  >> /tmp/deleted_logs.log

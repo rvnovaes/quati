@@ -1,6 +1,6 @@
 import os
 
-from django.conf.urls import url, include
+from django.urls import re_path as url, include
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.contrib.auth.decorators import login_required
@@ -18,7 +18,6 @@ from core.views import oauth2_login, oauth2_callback
 
 
 urlpatterns = [
-    url(r'^the-cool-upload-method/', include('django_file_form.urls')),
     url(r'^', include('core.urls')),    
     url(r'^admin/', admin.site.urls),
     url(r'^accounts/login/$', LoginCustomView.as_view(), name='account_login'),
@@ -98,12 +97,15 @@ urlpatterns = [
     url(r'^popup_success', PopupSuccessView.as_view(), name='popup_success'),
     url(r'^api-auth/', include('rest_framework.urls')),
     url(r'^api/v1/', include('ezl.urls_api')),
-    url(r'^api/v1/rest-auth/', include('rest_auth.urls')),    
+    url(r'^api/v1/rest-auth/', include('dj_rest_auth.urls')),    
 ] + static(
     settings.STATIC_URL,
     document_root=os.path.join(settings.BASE_DIR, 'static/'))
 
 if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+if 'debug_toolbar' in settings.INSTALLED_APPS:
     import debug_toolbar
     urlpatterns = [
         url(r'^__debug__/', include(debug_toolbar.urls)),

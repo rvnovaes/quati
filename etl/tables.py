@@ -11,24 +11,24 @@ class DashboardErrorStatusTable(tables.Table):
         self.length = self.rows.__len__()
 
     task_number = tables.Column(
-        accessor='task.task_number', verbose_name="Número da Providência")
+        accessor='task__task_number', verbose_name="Número da Providência")
     final_deadline_date = tables.Column(
-        accessor='task.final_deadline_date', verbose_name="Prazo")
+        accessor='task__final_deadline_date', verbose_name="Prazo")
     type_service = tables.Column(
-        accessor='task.type_task.name', verbose_name="Serviço")
+        accessor='task__type_task__name', verbose_name="Serviço")
     lawsuit_number = tables.Column(
-        accessor='task.movement.law_suit.law_suit_number',
+        accessor='task__movement__law_suit__law_suit_number',
         verbose_name="Processo")
     client = tables.Column(
-        accessor='task.movement.law_suit.folder.person_customer',
+        accessor='task__movement__law_suit__folder__person_customer',
         verbose_name="Cliente")
     opposing_party = tables.Column(
-        accessor='task.movement.law_suit.opposing_party',
+        accessor='task__movement__law_suit__opposing_party',
         verbose_name="Parte adversa")
     delegation_date = tables.Column(
-        accessor='task.delegation_date', verbose_name="Delegação")
+        accessor='task__delegation_date', verbose_name="Delegação")
     legacy_code = tables.Column(
-        accessor='task.legacy_code', verbose_name="Código Legado")
+        accessor='task__legacy_code', verbose_name="Código Legado")
     inconsistency_desc = tables.Column(
         order_by=('inconsistency'), verbose_name="Inconsistência")
     solution = tables.Column(verbose_name="Solução")

@@ -1,153 +1,52 @@
-version: "3"
-
+# Override de desenvolvimento. Ative com: make set_env_development
 services:
-  builder:
+  web:
     build:
-      context: .
-      dockerfile: containers/web/Dockerfile
       args:
         requirements_file: development.txt
-    image: ezl:latest
-    command: date
-    environment:
-      ENV: development
-
-  web:
     command: python manage.py runserver 0.0.0.0:8000
-    environment:
-      ENV: development
-      EMAIL_HOST: mail
-      EMAIL_PORT: 1025
-      EMAIL_USE_SSL: "false"
-      WORKFLOW_EMAIL: "http://localhost:8000"
     ports:
       - "8000:8000"
     depends_on:
-      - builder
-      - db
-      - queues
-  ws:
-    image: ezl:latest
-    volumes:
-      - .:/app
-      - ./media/service_price_table:/app/media/service_price_table
-      - ./media/temp_uploads:/app/media/temp_uploads
-      - ezl-logs:/var/log/ezl
-    ports:
-      - '8002:8002'
-    command: daphne -b 0.0.0.0 -p 8002 --ws-protocol "graphql-ws" --proxy-headers ezl.asgi:channel_layer
-  ws-worker:
-    image: ezl:latest
-    volumes:
-      - .:/app
-      - ./media/service_price_table:/app/media/service_price_table
-      - ./media/temp_uploads:/app/media/temp_uploads
-      - ezl-logs:/var/log/ezl
-    environment:
-      ENV: development
-      EMAIL_HOST: mail
-      EMAIL_PORT: 1025
-      EMAIL_USE_SSL: "false"
-      WORKFLOW_EMAIL: "http://localhost:8000"
-    command: python manage.py runworker
-  luigi:
-    command: luigid
-    environment:
-      ENV: development
-    ports:
-      - "8082:8082"
-  flower:
-    ports:
-      - "5555:5555"
-    environment:
-      ENV: development
-  tasks:
-    environment:
-      ENV: development
-      EMAIL_HOST: mail
-      EMAIL_PORT: 1025
-      EMAIL_USE_SSL: "false"
-      PYTHONPATH: /app
-    volumes:
-      - .:/app
-      - /mnt/windows_ecm/Agenda:/app/media/ECM
-      - /mnt/windows_ecm/Pastas:/app/media/ECM/Pastas      
-      - ./media/service_price_table:/app/media/service_price_table
-      - ezl-logs:/var/log/ezl      
-    depends_on:
-      - builder
-      - db
-      - queues
-  tasks2:
-    environment:
-      ENV: development
-      EMAIL_HOST: mail
-      EMAIL_PORT: 1025
-      EMAIL_USE_SSL: "false"
-      PYTHONPATH: /app
-    volumes:
-      - .:/app
-      - /mnt/windows_ecm/Agenda:/app/media/ECM
-      - /mnt/windows_ecm/Pastas:/app/media/ECM/Pastas      
-      - ./media/service_price_table:/app/media/service_price_table
-      - ezl-logs:/var/log/ezl      
-    depends_on:
-      - builder
-      - db
-      - queues
-  tasks3:
-    environment:
-      ENV: development
-      EMAIL_HOST: mail
-      EMAIL_PORT: 1025
-      EMAIL_USE_SSL: "false"
-      PYTHONPATH: /app
-    volumes:
-      - .:/app
-      - /mnt/windows_ecm/Agenda:/app/media/ECM
-      - /mnt/windows_ecm/Pastas:/app/media/ECM/Pastas      
-      - ./media/service_price_table:/app/media/service_price_table
-      - ezl-logs:/var/log/ezl      
-    depends_on:
-      - builder
-      - db
-      - queues
+      mail:
+        condition: service_started
 
-  tasks-schedule:
-    environment:
-      ENV: development
-      PYTHONPATH: /app
-    volumes:
-      - .:/app
-      - /mnt/windows_ecm/Agenda:/app/media/ECM
-      - /mnt/windows_ecm/Pastas:/app/media/ECM/Pastas      
-      - ./media/service_price_table:/app/media/service_price_table
-      - ezl-logs:/var/log/ezl      
+  ws:
+    ports:
+      - "8002:8002"
+
+  worker:
+    build:
+      args:
+        requirements_file: development.txt
 
   nginx:
     ports:
       - "8080:80"
-    volumes:
-      - ./containers/nginx/conf.d/ezl_dev.conf:/etc/nginx/conf.d/default.conf
-      - web-static:/usr/share/nginx/html/staticfiles
-      - web-media:/usr/share/nginx/html/media
-      - /mnt/windows_ecm/Pastas:/usr/share/nginx/html/media/ECM/Pastas
 
   db:
     ports:
       - "57002:5432"
 
-  mail:
-    image: mailhog/mailhog
+  redis:
     ports:
-      - "8025:8025"
-      - "1025:1025"
+      - "57003:6379"
 
   queues:
     ports:
       - "8083:15672"
       - "5672:5672"
 
-  redis:
+  flower:
     ports:
-      - "57003:6379"
+      - "5555:5555"
+
+  postfix:
+    profiles: ["production"]
+
+  mail:
+    image: axllent/mailpit:latest
+    ports:
+      - "8026:8025"
+      - "1026:1025"
+    restart: unless-stopped

@@ -1,0 +1,34 @@
+{% load bootstrap3 form_tags %}
+{# Renderiza o formulário em linhas. Usa form.layout_rows quando definido, senão 2 colunas. #}
+{% with rows=form.layout_rows %}
+{% if rows %}
+    {% for row in rows %}
+        <div class="row">
+        {% for field in row %}
+            {% field_type field as field_type %}
+            {% if field_type == 'checkbox' %}
+                <div class="form-group {{ row|col_class }}">
+                    <div class="checkbox checkbox-success">{{ field }} {{ field.label_tag }}</div>
+                </div>
+            {% else %}
+                {% bootstrap_field field form_group_class=row|col_class required_css_class="ezl-required" %}
+            {% endif %}
+        {% endfor %}
+        </div>
+    {% endfor %}
+{% else %}
+    <div class="row">
+    {% for field in form.visible_fields %}
+        {% field_type field as field_type %}
+        {% if field_type == 'checkbox' %}
+            <div class="form-group col-sm-6">
+                <div class="checkbox checkbox-success">{{ field }} {{ field.label_tag }}</div>
+            </div>
+        {% else %}
+            {% bootstrap_field field form_group_class="form-group col-sm-6" required_css_class="ezl-required" %}
+        {% endif %}
+    {% endfor %}
+    </div>
+{% endif %}
+{% for field in form.hidden_fields %}{{ field }}{% endfor %}
+{% endwith %}

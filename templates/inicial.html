@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 <!-- TODO: verificar se este arquivo pode ser excluido com novo template -->
-{% load staticfiles %}
+{% load static %}
 
 {% block css_head %}
     {{ block.super }}
@@ -171,9 +171,9 @@
                         <h4 class="modal-title">Sobre</h4>
                     </div>
                     <div class="modal-body">
-                        <p><img src="{% static "img/logo_ezl.png" %}" height="30"/></p>
+                        <p><img src="{% static "img/quati-logo.png" %}" alt="Quati" height="120"/></p>
                         <p>Versão: 1.3.5</p>
-                        <p>&copy; Copyright {% now "Y" %} EZLawyer. Todos os direitos reservados.</p>
+                        <p>&copy; {% now "Y" %} Quati. Todos os direitos reservados.</p>
                         <p>Compatibilidade com os navegadores:
                             <ul>
                                 <li>Chrome 62.0 (ou superior)</li>
@@ -182,9 +182,7 @@
                                 <li>Safari 11.0 (ou superior)</li>
                             </ul>
                         <br>
-                        <p>Desenvolvido por: <img onclick="window.open('http://www.ezlawyer.com.br/')"
-                            src="{% static "img/logo.png" %}" height="20" style="cursor: pointer; cursor: hand;"/>
-                        </p>
+                        <p>Desenvolvido por Quati.</p>
                     </div>
                 </div>
             </div>

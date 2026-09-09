@@ -4,13 +4,10 @@ from django.template.loader import render_to_string
 from django.contrib.auth.tokens import default_token_generator
 from allauth.account.utils import user_pk_to_url_str
 from django.urls.base import reverse
-import sendgrid
-from sendgrid.helpers.mail import Attachment, Mail
 from django.conf import settings
 from datetime import datetime
 from core.models import EMAIL, PHONE, CustomSettings
 from task import models as task_models
-import base64
 import traceback
 import logging
 from django.utils import timezone
@@ -217,7 +214,7 @@ class TaskRefusedMailTemplate(BaseTemplateEmail):
         }
 
 
-class TaskReturnMailTemplate(object):
+class TaskReturnMailTemplate(BaseTemplateEmail):
     def __init__(self, task, **kwargs):
         super().__init__(task, **kwargs)
         self.by_person = kwargs.get('by_person')
@@ -243,162 +240,146 @@ class TaskReturnMailTemplate(object):
         }
 
 
-class TaskMail(object):
-    def __init__(self,
-                 email,
-                 task,
-                 template_id,
-                 by_person=None,
-                 task_number=''):
-        self.sg = sendgrid.SendGridAPIClient(
-            apikey=settings.EMAIL_HOST_PASSWORD
-        )
+
+def _apply_default_recipient(recipients):
+    """
+    Em homologação (DEFAULT_TO_EMAIL definido) todo e-mail vai para o endereço configurado.
+    Retorna (lista_destinatarios, destinatarios_originais_ou_None).
+    """
+    recipients = list(dict.fromkeys(r for r in recipients if r))
+    if settings.DEFAULT_TO_EMAIL:
+        return [settings.DEFAULT_TO_EMAIL], recipients
+    return recipients, None
+
+
+class TemplateMail(object):
+    """
+    Renderiza um template Django de e-mail e envia via SMTP (Postfix).
+    Substitui o envio por templates dinâmicos do SendGrid.
+    """
+    template_name = None
+    subject = None
+    from_email = None
+
+    def __init__(self, recipients, template_name=None, subject=None):
+        self.recipients, self.original_recipients = _apply_default_recipient(recipients)
+        if template_name:
+            self.template_name = template_name
+        if subject:
+            self.subject = subject
+        self.from_email = self.from_email or settings.DEFAULT_FROM_EMAIL
+        self.attachments = []
+
+    def get_context(self):
+        return {}
+
+    def get_subject(self, context):
+        return self.subject or context.get('title_type_service') or settings.PROJECT_NAME
+
+    def build_message(self):
+        context = self.get_context()
+        if not context:
+            return None
+        context.setdefault('project_name', settings.PROJECT_NAME)
+        context.setdefault('project_link', settings.PROJECT_LINK)
+        context.setdefault('server', settings.WORKFLOW_URL_EMAIL)
+        if self.original_recipients:
+            context['original_recipients'] = ', '.join(self.original_recipients)
+        html = render_to_string(self.template_name, context)
+        msg = EmailMultiAlternatives(self.get_subject(context), 'Este e-mail requer um cliente com suporte a HTML.',
+                                     self.from_email, self.recipients)
+        msg.attach_alternative(html, 'text/html')
+        for filename, content, mimetype in self.attachments:
+            msg.attach(filename, content, mimetype)
+        return msg
+
+    def send_mail(self):
+        if not self.recipients:
+            return False
+        try:
+            msg = self.build_message()
+            if msg is None:
+                return False
+            sent = msg.send()
+            logger.info('E-mail "%s" enviado para %s (%s)', msg.subject, self.recipients, sent)
+            return bool(sent)
+        except Exception:
+            logger.error(traceback.format_exc())
+            return False
+
+
+class TaskMail(TemplateMail):
+    """
+    E-mail de mudança de status da OS. O template é escolhido pelo status atual da OS;
+    o parâmetro template_id (nome do template cadastrado em EmailTemplate) só sobrescreve
+    quando termina em ".html".
+    """
+    @staticmethod
+    def email_status():
+        # Import tardio: task.models importa este módulo.
+        TaskStatus = task_models.TaskStatus
+        return {
+            TaskStatus.REQUESTED: (TaskOpenMailTemplate, 'mail/task_open.html'),
+            TaskStatus.REFUSED_SERVICE: (TaskRefusedServiceMailTemplate, 'mail/task_refused_service.html'),
+            TaskStatus.REFUSED: (TaskRefusedMailTemplate, 'mail/task_refused.html'),
+            TaskStatus.RETURN: (TaskReturnMailTemplate, 'mail/task_return.html'),
+            TaskStatus.ACCEPTED: (TaskAcceptedMailTemplate, 'mail/task_accepted.html'),
+            TaskStatus.OPEN: (TaskOpenMailTemplate, 'mail/task_open.html'),
+            TaskStatus.FINISHED: (TaskFinishedEmail, 'mail/task_finished.html'),
+        }
+
+    def __init__(self, email, task, template_id=None, by_person=None, task_number=''):
+        super().__init__(email)
+        self.task = task
         self.by_person = by_person
         self.task_number = task_number
-        self.task = task
-        self.email = [{"email": email_address} for email_address in list(set(email))]
-        self.template_id = template_id
-        self.email_status = {
-            task_models.TaskStatus.REQUESTED: TaskOpenMailTemplate,
-            task_models.TaskStatus.REFUSED_SERVICE: TaskRefusedServiceMailTemplate,
-            task_models.TaskStatus.REFUSED: TaskRefusedMailTemplate,
-            task_models.TaskStatus.RETURN: TaskReturnMailTemplate,
-            task_models.TaskStatus.ACCEPTED: TaskAcceptedMailTemplate,
-            task_models.TaskStatus.OPEN: TaskOpenMailTemplate,
-            task_models.TaskStatus.FINISHED: TaskFinishedEmail,
-        }
-        template_kwargs = {
-            'by_person': by_person,
-            'task_number': task_number
-        }
-        self.template_class = self.email_status.get(self.task.status)(task, **template_kwargs)
+        template_class, template_name = self.email_status().get(self.task.status, (None, None))
+        if template_id and str(template_id).endswith('.html'):
+            template_name = template_id
+        self.template_name = template_name
+        self.template_class = template_class(task, by_person=by_person, task_number=task_number) \
+            if template_class else None
         self.attachments = self.get_task_attachments()
-        self.dynamic_template_data = self.template_class.get_dynamic_template_data(
-        )
-        to_email = self.email
-        original_recipient = None
-        if settings.DEFAULT_TO_EMAIL:
-            to_email = [{"email": settings.DEFAULT_TO_EMAIL}]
-            original_recipient = self.email
 
-        self.data = {
-            "personalizations": [{
-                "to": to_email,
-                "subject":
-                    "Sending template e-mail",
-                "dynamic_template_data":
-                    self.dynamic_template_data
-            }],
-            "from": {
-                "email": "contato@ezlawyer.com.br"
-            },
-            "template_id":
-                self.template_id
-        }
-
-        if original_recipient:
-            self.data['mail_settings'] = {
-                "footer": {
-                    "enable": True,
-                    "html": "<p>Destinatário(s) originais: {}".format(original_recipient)
-                }
-            }
-
-        if self.attachments:
-            self.data['attachments'] = self.attachments
+    def get_context(self):
+        if not self.template_class:
+            return {}
+        data = self.template_class.get_dynamic_template_data()
+        if not data:
+            return {}
+        data['task'] = self.task
+        return data
 
     def get_task_attachments(self):
         task = self.task.parent if self.task.parent else self.task
-        ecm_list = []
-
+        attachments = []
         for ecm in task.ecm_set.all():
             try:
-                ecm_list.append(self.set_mail_attachment(ecm))
-            except:
-                pass
-
-        return ecm_list
-
-    def set_mail_attachment(self, ecm):
-        attachment = {
-            "content": base64.b64encode(ecm.path.read()).decode(),
-            "type": "application/pdf",
-            "filename": ecm.filename,
-            "disposition": "attachment"
-        }
-        return attachment
-
-    def send_mail(self):
-        if self.dynamic_template_data:
-            try:
-                response = self.sg.client.mail.send.post(
-                    request_body=self.data)
-                logging.info('Status do E-MAIL: {}'.format(
-                    response.status_code))
-                logging.info('Body do E-MAIL: {}'.format(response.body))
-                logging.info('Header do E-MAIL: {}'.format(response.headers))
-            except Exception as e:
-                logging.error(traceback.format_exc())
+                attachments.append((ecm.filename, ecm.path.read(), 'application/octet-stream'))
+            except Exception:
+                logger.warning('Não foi possível anexar o ECM %s ao e-mail', ecm.pk)
+        return attachments
 
 
-class TaskCompanyRepresentativeChangeMail(object):
-    def __init__(self, email, task, template_id):
-        self.sg = sendgrid.SendGridAPIClient(
-            apikey=settings.EMAIL_HOST_PASSWORD
-        )
+class TaskCompanyRepresentativeChangeMail(TemplateMail):
+    """E-mail para o preposto quando ele é vinculado/desvinculado de uma OS."""
+
+    def __init__(self, email, task, template_name):
+        super().__init__(email, template_name=template_name)
         self.task = task
-        self.email = [{"email": email_address} for email_address in list(set(email))]
-        self.template_id = template_id
-        self.dynamic_template_data = self.get_dynamic_template_data()
-        to_email = self.email
-        original_recipient = None
-        if settings.DEFAULT_TO_EMAIL:
-            to_email = [{"email": settings.DEFAULT_TO_EMAIL}]
-            original_recipient = self.email
-        self.data = {
-            "personalizations": [{
-                "to": to_email,
-                "subject":
-                    "Sending with SendGrid is Fun",
-                "dynamic_template_data":
-                    self.dynamic_template_data
-            }],
-            "from": {
-                "email": "contato@ezlawyer.com.br"
-            },
-            "template_id":
-                self.template_id
-        }
 
-        if original_recipient:
-            self.data['mail_settings'] = {
-                "footer": {
-                    "enable": True,
-                    "html": "<p>Destinatário(s) originais: {}".format(original_recipient)
-                }
-            }
-
-    def get_dynamic_template_data(self):
+    def get_context(self):
         project_link = '{}{}'.format(
             get_project_link(self.task),
             reverse('task_detail', kwargs={'pk': self.task.pk}))
         return {
-            "task":
-                "{task_number} - {type_task} ".format(
-                    task_number=self.task.task_number,
-                    type_task=self.task.type_task.name),
+            "task": self.task,
+            "task_title": "{task_number} - {type_task} ".format(
+                task_number=self.task.task_number,
+                type_task=self.task.type_task.name),
             "task_url": project_link,
             "name": self.task.person_company_representative.legal_name
-        }            
+        }
 
-    def send_mail(self):
-        if self.dynamic_template_data:
-            try:
-                response = self.sg.client.mail.send.post(
-                    request_body=self.data)
-                logging.info('Status do E-MAIL: {}'.format(
-                    response.status_code))
-                logging.info('Body do E-MAIL: {}'.format(response.body))
-                logging.info('Header do E-MAIL: {}'.format(response.headers))
-            except Exception as e:
-                logging.error(traceback.format_exc())
+    def get_subject(self, context):
+        return 'OS {}'.format(context['task_title'])

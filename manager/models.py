@@ -1,6 +1,6 @@
 import json
 
-from django.contrib.postgres.fields import JSONField
+from django.db.models import JSONField
 from django.db import models
 
 from .schemas import DEFAULT_VALUE
@@ -46,14 +46,18 @@ class Template(Audit):
         return GenericTemplate(self).default_python_value
 
 
+def default_template_value():
+    return json.dumps(DEFAULT_VALUE, indent=4)
+
+
 class TemplateValue(OfficeMixin, Audit):
 
-    template = models.ForeignKey(Template, verbose_name='Configuração')
+    template = models.ForeignKey(Template, verbose_name='Configuração', on_delete=models.PROTECT)
     value = JSONField(
         null=True,
         blank=True,
         verbose_name='Valor',
-        default=json.dumps(DEFAULT_VALUE, indent=4))
+        default=default_template_value)
 
     objects = OfficeManager()
 

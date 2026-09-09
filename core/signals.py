@@ -41,21 +41,21 @@ def create_office_setting_default_user(office):
 def create_office_setting_i_work_alone(office):
     template_key = TemplateKeys.I_WORK_ALONE.name
     template = get_template_by_key(template_key)
-    i_work_alone = getattr(office, '_i_work_alone', template.default_value)
+    i_work_alone = getattr(office, '_i_work_alone', template.default_value if template else False)
     office.i_work_alone = i_work_alone
 
 
 def create_office_setting_use_service(office):
     template_key = TemplateKeys.USE_SERVICE.name
     template = get_template_by_key(template_key)
-    use_service = getattr(office, '_use_servie', template.default_value)
+    use_service = getattr(office, '_use_servie', template.default_value if template else False)
     office.use_service = use_service
 
 
 def create_office_setting_use_etl(office):
     template_key = TemplateKeys.USE_ETL.name
     template = get_template_by_key(template_key)
-    use_etl = getattr(office, '_use_etl', template.default_value)
+    use_etl = getattr(office, '_use_etl', template.default_value if template else False)
     office.use_etl = use_etl
 
 
@@ -78,6 +78,9 @@ def create_office_setting_default_customer(office):
 
     if not exist_template_value(office, template_key):
         template = get_template_by_key(template_key)
+        if template is None:
+            # Fixture 'template' (app manager) ainda não carregada (ex.: testes). Nada a configurar.
+            return
         create_template_value(template, office, default_customer.id)
     else:
         template_obj = office.get_template_value_obj(template_key)
@@ -136,7 +139,7 @@ def send_invite_email(instance, sender, **kwargs):
     if hasattr(instance, '_InviteCreateView__host'):
         project_link = instance._InviteCreateView__host
     mail = SendMail()
-    mail.subject = 'Easy Lawyer - Convite para cadastro'
+    mail.subject = 'Quati - Convite para cadastro'
     mail.message = render_to_string(
         'core/mail/base.html', {
             'server': project_link,

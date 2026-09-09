@@ -1,0 +1,17 @@
+<textarea name="{{ widget.name }}"{% include "django/forms/widgets/attrs.html" %}>{% if widget.value %}{{ widget.value }}{% endif %}</textarea>
+<script>
+(function () {
+    var init = function () {
+        var el = document.getElementById('{{ widget.attrs.id }}');
+        if (!el || el.dataset.cmReady || typeof CodeMirror === 'undefined') { return; }
+        var config = {{ widget.config|safe }};
+        config.mode = '{{ widget.mode }}';
+        config.theme = '{{ widget.theme }}';
+        config.lineNumbers = true;
+        var cm = CodeMirror.fromTextArea(el, config);
+        cm.on('change', function () { cm.save(); });
+        el.dataset.cmReady = '1';
+    };
+    if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', init); } else { init(); }
+})();
+</script>

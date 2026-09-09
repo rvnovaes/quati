@@ -81,8 +81,7 @@
                                 data-dismiss="modal">
                             <i class="mdi mdi-close"></i> Cancelar
                         </button>                        
-                        <button id="actionButton" rel="gn_lightbox"
-                            type="submit"
+                        <button id="actionButton"                             type="submit"
                             onclick="taskDetail.submitTaskDetail(this, '{{form.instance.office.use_service}}')"
                             survey={% if form.instance|has_survey_correspondent %}true{% else %}''{% endif %}
                             style="width: 100px!important;"
@@ -115,30 +114,13 @@
     <script src="{% static 'libs/jQuery-File-Upload/js/jquery.iframe-transport.js' %}?rev={{request.REVIEW}}"></script>
     <script src="{% static 'libs/jQuery-File-Upload/js/jquery.fileupload.js' %}?rev={{request.REVIEW}}"></script>
     <script src="{% static 'libs/jQuery-File-Upload/js/basic-upload.js' %}?rev={{request.REVIEW}}"></script>
-    script src='{% static "task/task-detail.js" %}?rev={{request.REVIEW}}'></script>
+    <script src='{% static "task/task-detail.js" %}?rev={{request.REVIEW}}'></script>
     <script src='{% static "task/js/task-service-price-table.js" %}?rev={{request.REVIEW}}'></script>>
-    <script src="{% static 'billing/js/checkout.js' %}?rev={{request.REVIEW}}"></script>
     <script type="text/javascript">
     var taskDetail;
-    var gn_checkout;
-    var gn_callback = function(error, response) {
-        if(error) {
-          // Trata o erro ocorrido
-          console.error(error);
-        } else {
-          // Trata a resposta
-          console.log(response);
-        }
-      };
-
-    $gn.ready(function(checkout) {
-      gn_checkout = checkout;
-    });
 
     $(document).ready(function(){
-        var checkout = new Checkout('{{csrf_token}}', '{{object.charge.charge_id}}');
-        let billing = new Billing(checkout);
-        taskDetail = new TaskDetail('{{object.pk}}', '{{object.status.name}}', '{{custom_settings.i_work_alone}}', '{{pending_surveys.status|lower}}', {{ pending_surveys.pending_list|safe }}, `{{survey_company_representative|safe}}`, '{{csrf_token}}', billing, '{{object.charge.charge_id}}', '{{object.type_task.id}}', '{{object.type_task.name}}', '{{object.office.use_service}}');
+        taskDetail = new TaskDetail('{{object.pk}}', '{{object.status.name}}', '{{custom_settings.i_work_alone}}', '{{pending_surveys.status|lower}}', {{ pending_surveys.pending_list|safe }}, `{{survey_company_representative|safe}}`, '{{csrf_token}}', null, null, '{{object.type_task.id}}', '{{object.type_task.name}}', '{{object.office.use_service}}');
 
         get_internal_ecms({{form.instance.pk}});
     })

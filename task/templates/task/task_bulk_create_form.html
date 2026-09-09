@@ -1,5 +1,5 @@
 {% extends 'task/task_form.html' %}
-{% load core_filters form_tags staticfiles bootstrap3 %}
+{% load core_filters form_tags static bootstrap3 %}
 
 {% block page_title %}
     {% with "ORDEM DE SERVIÇO" as form_name_plural %}
@@ -200,13 +200,6 @@
     {{ block.super }}
     {{ form.media }}
     <script src="{% static 'task/task-bulk-create.js' %}?rev={{request.REVIEW}}"></script>
-    <script src="{% static "ajaxuploader/js/fileuploader.js" %}?rev={{request.REVIEW}}"></script>
-    <script src="{% static "file_form/file_form.js" %}?rev={{request.REVIEW}}"></script>
-    <script>
-       $(function() {
-           initUploadFields($('#task_form'));
-       });
-    </script>
     <script type="text/javascript">
         var task;
         var defaultCustomer = {};
@@ -242,7 +235,7 @@
 
 {% block extra_stylesheets %}
     <link rel="stylesheet" href="{% static "fileuploader.css" %}">
-    <link href="/static/autocomplete_light/vendor/select2/dist/css/select2.css" type="text/css" media="all" rel="stylesheet" />
+    <link href="/static/admin/css/vendor/select2/select2.css" type="text/css" media="all" rel="stylesheet" />
     <link href="/static/autocomplete_light/select2.css" type="text/css" media="all" rel="stylesheet" />
     <style>
     .input-group {

@@ -1,5 +1,5 @@
 import json
-from django.contrib.postgres.forms import JSONField
+from django.forms import JSONField
 from django.db.models.fields import NOT_PROVIDED
 from import_export.fields import Field
 from task.messages import columns_not_available, record_not_found, incorrect_natural_key, column_error, required_column

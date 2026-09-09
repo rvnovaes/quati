@@ -5,7 +5,6 @@ from django_filters import FilterSet, ModelChoiceFilter, NumberFilter, CharFilte
 from dal import autocomplete
 from django.db.models import Q
 from core.models import Person, State, Office, Team
-from core.utils import filter_valid_choice_form
 from core.widgets import MDDateTimeRangeFilter, TypeaHeadForeignKeyWidget, MDSelect
 from financial.models import CostCenter
 from lawsuit.models import CourtDistrict, Organ, CourtDistrictComplement
@@ -44,13 +43,13 @@ class MultiValueCharFilter(filters.BaseCSVFilter, filters.CharFilter):
 
 
 class TaskApiFilter(FilterSet):
-    is_hearing = filters.BooleanFilter(name='type_task__type_task_main__is_hearing')
-    office_id = MultiValueCharFilter(name='office_id', lookup_expr='in')
-    person_executed_by_id = MultiValueCharFilter(name='person_executed_by_id', lookup_expr='in')
+    is_hearing = filters.BooleanFilter(field_name='type_task__type_task_main__is_hearing')
+    office_id = MultiValueCharFilter(field_name='office_id', lookup_expr='in')
+    person_executed_by_id = MultiValueCharFilter(field_name='person_executed_by_id', lookup_expr='in')
     final_deadline_date = DatetimeFromToRangeFilter()
     finished_date = DatetimeFromToRangeFilter()
-    task_status = MultiValueCharFilter(name='task_status', lookup_expr='in')
-    parent_id = filters.NumberFilter(name='parent_id')
+    task_status = MultiValueCharFilter(field_name='task_status', lookup_expr='in')
+    parent_id = filters.NumberFilter(field_name='parent_id')
 
     class Meta:
         model = Task
@@ -69,12 +68,11 @@ class TaskDashboardApiFilter(TaskApiFilter):
 
 class TaskFilter(FilterSet):
     state = ModelMultipleChoiceFilter(
-        queryset=filter_valid_choice_form(
-            State.objects.filter(is_active=True)),
+        queryset=State.objects.filter(is_active=True),
         label="UF",
         widget=autocomplete.ModelSelect2Multiple(url='state-autocomplete'))
     court_district = ModelMultipleChoiceFilter(
-        queryset=filter_valid_choice_form(CourtDistrict.objects.all()),
+        queryset=CourtDistrict.objects.all(),
         label='Comarca',
         widget=autocomplete.ModelSelect2Multiple(url='courtdistrict_filter_select2', forward=['state']))
     court_district_complement = ModelChoiceFilter(label='Complemento de Comarca',
@@ -98,7 +96,7 @@ class TaskFilter(FilterSet):
     cost_center = ModelChoiceFilter(label="Setor",
                                     required=False,
                                     widget=MDSelect(url='/financeiro/centros-de-custos/filter_autocomplete',),
-                                    queryset=filter_valid_choice_form(CostCenter.objects.all()),)
+                                    queryset=CostCenter.objects.all(),)
     court = ModelChoiceFilter(label="Órgão",
                               required=False,
                               widget=MDSelect(url='/processos/organ_filter_select2_autocomplete', ),
@@ -148,21 +146,21 @@ class TaskFilter(FilterSet):
         name='accepted_service_in', label="Aceitas pelo Service entre:")
     refused_service_in = MDDateTimeRangeFilter(
         name='refused_service_in', label="Recusadas pelo Service entre:")
-    open_in = MDDateTimeRangeFilter(name='open_in', label="Abertas entre:")
+    open_in = MDDateTimeRangeFilter(field_name='open_in', label="Abertas entre:")
     accepted_in = MDDateTimeRangeFilter(
         name='accepted_in', label="Aceitas entre:")
     refused_in = MDDateTimeRangeFilter(
         name='refused_in', label="Recusadas entre:")
     return_in = MDDateTimeRangeFilter(
         name='return_in', label="Retornadas entre:")
-    done_in = MDDateTimeRangeFilter(name='done_in', label="Cumpridas entre:")
+    done_in = MDDateTimeRangeFilter(field_name='done_in', label="Cumpridas entre:")
     blocked_payment_in = MDDateTimeRangeFilter(
         name='blocked_payment_in', label="Glosadas entre:")
     finished_in = MDDateTimeRangeFilter(
         name='finished_in', label="Finalizadas entre:")
 
     custom_filter = ModelChoiceFilter(
-        queryset=filter_valid_choice_form(Filter.objects.all()),
+        queryset=Filter.objects.all(),
         label="Escolher filtro salvo",
         required=False,
         widget=Select(attrs={'onchange': 'this.form.submit()'}))
@@ -176,14 +174,8 @@ class TaskFilter(FilterSet):
             'rows': '3'
         }))
 
-    def __init__(self,
-                 data=None,
-                 queryset=None,
-                 prefix=None,
-                 strict=None,
-                 request=None):
-        super(TaskFilter, self).__init__(data, queryset, prefix, strict,
-                                         request)
+    def __init__(self, data=None, queryset=None, *, request=None, prefix=None, **kwargs):
+        super(TaskFilter, self).__init__(data=data, queryset=queryset, request=request, prefix=prefix)
         self.filters['custom_filter'].queryset = Filter.objects.filter(
             create_user=self.request.user).order_by('name')
         filters_list = ['type_task', 'cost_center', 'court', 'team']
@@ -222,7 +214,7 @@ class BatchChangTaskFilter(TaskFilter):
 
 
 class TaskReportFilterBase(FilterSet):
-    finished_in = MDDateTimeRangeFilter(name='finished_in')
+    finished_in = MDDateTimeRangeFilter(field_name='finished_in')
 
     client = CharFilter(label="Cliente", required=False)
     office = CharFilter(label="Escritório Correspondente", required=False)
@@ -262,12 +254,12 @@ class TaskToReceiveFilter(TaskReportFilterBase):
         ))
     group_by_tasks = ChoiceFilter(
         empty_label=None, choices=GROUP_BY_TASK_TO_RECEIVE_TYPE)
-    parent_finished_in = MDDateTimeRangeFilter(name='parent_finished_in')
+    parent_finished_in = MDDateTimeRangeFilter(field_name='parent_finished_in')
 
 
 class TypeTaskMainFilter(filters.FilterSet):
-    is_hearing = filters.BooleanFilter(name='is_hearing')
-    name = filters.CharFilter(name='name', lookup_expr='unaccent__icontains')
+    is_hearing = filters.BooleanFilter(field_name='is_hearing')
+    name = filters.CharFilter(field_name='name', lookup_expr='unaccent__icontains')
 
     class Meta:
         model = TypeTaskMain
@@ -275,11 +267,11 @@ class TypeTaskMainFilter(filters.FilterSet):
 
 
 class TaskCheckinReportFilter(FilterSet):
-    finished_date = MDDateTimeRangeFilter(name='finished_date', label='TESTE')
-    execution_date = MDDateTimeRangeFilter(name='execution_date')
-    task_executed_by = CharFilter(name='executed_by_checkin__create_user__person__legal_name',
+    finished_date = MDDateTimeRangeFilter(field_name='finished_date', label='TESTE')
+    execution_date = MDDateTimeRangeFilter(field_name='execution_date')
+    task_executed_by = CharFilter(field_name='executed_by_checkin__create_user__person__legal_name',
                                   lookup_expr='unaccent__icontains', label='Correspondente/Escritório contratado')
-    task_company_representative = CharFilter(name='company_representative_checkin__create_user__person__legal_name',
+    task_company_representative = CharFilter(field_name='company_representative_checkin__create_user__person__legal_name',
                                              lookup_expr='unaccent__icontains', label='Preposto')
     has_checkin = ChoiceFilter(
         empty_label='Todas',

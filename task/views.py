@@ -21,7 +21,8 @@ from django.utils import timezone
 from django.utils.formats import date_format
 from django.views.generic import CreateView, UpdateView, TemplateView, View
 from django.views.static import serve as static_serve_view
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.views.decorators.http import require_POST
 from django_tables2 import SingleTableView, RequestConfig
 from djmoney.money import Money
 from core.messages import CREATE_SUCCESS_MESSAGE, UPDATE_SUCCESS_MESSAGE, DELETE_SUCCESS_MESSAGE, \
@@ -56,7 +57,7 @@ from task.utils import get_task_attachment, get_dashboard_tasks, get_task_ecms, 
 from decimal import Decimal
 from guardian.core import ObjectPermissionChecker
 from functools import reduce
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
 import os
 from django.conf import settings
 from urllib.parse import urljoin
@@ -64,7 +65,6 @@ from babel.numbers import format_currency
 from task import signals
 from django.db.models.signals import pre_save, post_save
 from dal import autocomplete
-from billing.gerencianet_api import api as gn_api
 import logging
 import operator
 from manager.template_values import ListTemplateValues
@@ -226,8 +226,9 @@ class TaskBulkCreateView(AuditFormMixin, CreateView):
             ret = {'status': 'Ok', 'task_id': task.id, 'task_number': task.task_number}
             return JsonResponse(ret, status=status)
         except Exception as e:
+            logger.exception('Erro ao criar OS')
             status = 500
-            ret = {'status': 'error', 'error': e.messages}
+            ret = {'status': 'error', 'error': getattr(e, 'messages', [str(e)])}
             return JsonResponse(ret, status=status)
 
     def form_invalid(self, form):
@@ -734,7 +735,7 @@ class ToPayTaskReportView(View):
 
             if data['status']:
                 key = "parent__{}__isnull".format(self.datetime_field)
-                query.add(Q(**{key: int(data['status'])}), Q.AND)
+                query.add(Q(**{key: data['status'] == '1'}), Q.AND)
 
             if data['client']:
                 query.add(
@@ -880,6 +881,8 @@ class DashboardView(CustomLoginRequiredView, TemplateView):
         checker = ObjectPermissionChecker(person.auth_user)
         ret_status_dict, office_session = self.get_data(person, checker)
         context['ret_status_dict'] = ret_status_dict
+        context.update(self.get_flow_context(ret_status_dict, context['cards_to_show']))
+        context.update(self.get_deadlines_context(person, checker))
 
         if not self.request.user.get_all_permissions():
             context['messages'] = [{
@@ -887,6 +890,80 @@ class DashboardView(CustomLoginRequiredView, TemplateView):
                 'message': NO_PERMISSIONS_DEFINED
             }]
         return context
+
+    # Etapas do fluxo principal da OS, na ordem em que aparecem na faixa do dashboard.
+    FLOW_STATUSES = (TaskStatus.REQUESTED, TaskStatus.ACCEPTED_SERVICE, TaskStatus.OPEN,
+                     TaskStatus.ACCEPTED, TaskStatus.DONE, TaskStatus.FINISHED)
+    FLOW_HINTS = {
+        TaskStatus.REQUESTED: 'aguardando delegação',
+        TaskStatus.ACCEPTED_SERVICE: 'aceita pelo service',
+        TaskStatus.OPEN: 'delegada, sem resposta',
+        TaskStatus.ACCEPTED: 'aceita pelo correspondente',
+        TaskStatus.DONE: 'aguardando conferência',
+        TaskStatus.FINISHED: 'conferida e paga',
+    }
+    SIDE_CHIP_CLASS = {
+        TaskStatus.ERROR: 'q-chip-bad', TaskStatus.REFUSED_SERVICE: 'q-chip-bad', TaskStatus.REFUSED: 'q-chip-bad',
+        TaskStatus.RETURN: 'q-chip-warn', TaskStatus.BLOCKEDPAYMENT: 'q-chip-muted',
+    }
+
+    def get_flow_context(self, ret_status_dict, cards_to_show):
+        """Separa os status em etapas do fluxo (faixa) e estados fora do fluxo (chips)."""
+        by_name = {}
+        for key, item in ret_status_dict.items():
+            if isinstance(item, dict) and item.get('name'):
+                by_name[item['name']] = item
+        flow, side = [], []
+        for status in self.FLOW_STATUSES:
+            item = by_name.get(status.name)
+            if not item or (cards_to_show and status.value not in cards_to_show):
+                continue
+            flow.append(dict(item, hint=self.FLOW_HINTS[status],
+                             css='q-done' if status is TaskStatus.FINISHED else 'q-s{}'.format(min(len(flow), 3)),
+                             dom_id=item['status'].replace(' ', '_').lower()))
+        for status, css in self.SIDE_CHIP_CLASS.items():
+            item = by_name.get(status.name)
+            if not item or (cards_to_show and status.value not in cards_to_show):
+                continue
+            side.append(dict(item, css=css, dom_id=item['status'].replace(' ', '_').lower()))
+        return {'flow_statuses': flow, 'side_statuses': side}
+
+    def get_deadlines_context(self, person, checker):
+        """OS ativas com prazo fatal nos próximos 7 dias, para a tabela de prazos."""
+        office_session = get_office_session(self.request)
+        data, _ = get_dashboard_tasks(self.request, office_session, checker, person)
+        now = timezone.now()
+        active = [TaskStatus.REQUESTED.value, TaskStatus.ACCEPTED_SERVICE.value, TaskStatus.OPEN.value,
+                  TaskStatus.ACCEPTED.value, TaskStatus.RETURN.value]
+        queryset = data.filter(task_status__in=active, final_deadline_date__lte=now + timezone.timedelta(days=7)) \
+            .select_related('type_task', 'person_executed_by', 'movement__law_suit__court_district') \
+            .order_by('final_deadline_date')
+        chip_for = {
+            TaskStatus.REQUESTED.value: 'q-chip-muted', TaskStatus.ACCEPTED_SERVICE.value: 'q-chip-info',
+            TaskStatus.OPEN.value: 'q-chip-bad', TaskStatus.ACCEPTED.value: 'q-chip-warn', TaskStatus.RETURN.value: 'q-chip-warn',
+        }
+        deadlines = []
+        for task in queryset[:8]:
+            deadline = timezone.localtime(task.final_deadline_date) if task.final_deadline_date else None
+            child = task.get_latest_child_not_refused
+            executed_by = task.person_executed_by or (child.office if child else None)
+            if deadline is None:
+                urgency = ''
+            elif deadline < now:
+                urgency = 'q-due-hot'
+            elif (deadline - now).total_seconds() < 48 * 3600:
+                urgency = 'q-due-hot'
+            elif (deadline - now).total_seconds() < 4 * 86400:
+                urgency = 'q-due-soon'
+            else:
+                urgency = ''
+            deadlines.append({
+                'pk': task.pk, 'task_number': task.task_number, 'type_task': task.type_task,
+                'executed_by': executed_by, 'court_district': task.court_district,
+                'deadline': deadline, 'overdue': bool(deadline and deadline < now), 'urgency': urgency,
+                'status': task.task_status, 'chip': chip_for.get(task.task_status, 'q-chip-muted'),
+            })
+        return {'deadlines': deadlines, 'deadlines_total': queryset.count(), 'today': timezone.localtime(now)}
 
     def get_data(self, person, checker):
         office_session = get_office_session(self.request)
@@ -1163,13 +1240,19 @@ def delete_ecm(request, pk):
 
 
 @login_required
+@require_POST
 def delete_internal_ecm(request, pk):
+    office = get_office_session(request)
+    if not office or not ObjectPermissionChecker(request.user).get_perms(office):
+        raise PermissionDenied
+    get_object_or_404(Ecm, pk=pk, task__office=office)
     return delete_ecm(request, pk)
 
 
+@require_POST
 def delete_external_ecm(request, task_hash, pk):
     # Para usuario que apenas acessam a task por hash, sem autenticar
-    ecm = Ecm.objects.get(pk=pk)
+    ecm = get_object_or_404(Ecm, pk=pk)
     if ecm.task.task_hash.hex == task_hash:
         return delete_ecm(request, pk)
     return JsonResponse({'message': 'Hash inválido'})
@@ -1706,8 +1789,7 @@ class ExternalMediaFileView(View):
             if os.path.exists(os.path.join(settings.MEDIA_ROOT, path)):
                 return static_serve_view(
                     self.request, path, document_root=settings.MEDIA_ROOT)
-            return HttpResponseRedirect(
-                urljoin(settings.AWS_STORAGE_BUCKET_URL, path))
+        raise Http404('Arquivo não existe')
         raise Http404('Arquivo não existe')
 
 
@@ -2241,7 +2323,7 @@ class TypeTaskAutocomplete(autocomplete.Select2QuerySetView):
         return TypeTask.objects.filter(is_active=True, office=get_office_session(self.request))
 
     def get_queryset(self):
-        if not self.request.user.is_authenticated():
+        if not self.request.user.is_authenticated:
             return TypeTask.objects.none()
         qs = self.base_queryset
         if self.q:
@@ -2257,7 +2339,7 @@ class TypeTaskFilterAutocomplete(TypeTaskAutocomplete):
 
 class TypeTaskMainAutocomplete(autocomplete.Select2QuerySetView):
     def get_queryset(self):
-        if not self.request.user.is_authenticated():
+        if not self.request.user.is_authenticated:
             return TypeTaskMain.objects.none()
         qs = TypeTaskMain.objects.all()
         if self.q:

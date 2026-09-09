@@ -1,6 +1,6 @@
 import json
 from core.views import CustomLoginRequiredView
-from django.core.urlresolvers import reverse_lazy, reverse
+from django.urls import reverse_lazy, reverse
 from django.contrib import messages
 from django.shortcuts import render, redirect
 from django.db.models import Q
@@ -25,7 +25,7 @@ from .tables import CostCenterTable, ServicePriceTableTable, PolicyPriceTable
 from .tasks import import_xls_service_price_table, IMPORTED_IMPORT_SERVICE_PRICE_TABLE, \
 PROCESS_PERCENT_IMPORT_SERVICE_PRICE_TABLE, WORKSHEET_IN_PROCESS, IMPORTED_WORKSHEET,\
 ERROR_PROCESS
-from core.views import remove_invalid_registry, TypeaHeadGenericSearch
+from core.views import TypeaHeadGenericSearch
 from core.utils import get_office_session
 from .utils import clearCache
 from dal import autocomplete
@@ -35,18 +35,6 @@ class CostCenterListView(CustomLoginRequiredView, SingleTableViewMixin):
     model = CostCenter
     table_class = CostCenterTable
     ordering = ('name', )
-
-    @remove_invalid_registry
-    def get_context_data(self, **kwargs):
-        """
-        Sobrescreve o metodo get_context_data utilizando o decorator
-        remove_invalid_registry para remover o registro invalido da listagem
-        :param kwargs:
-        :return: Retorna o contexto contendo a listagem
-        :rtype: dict
-        """
-        context = super().get_context_data(**kwargs)
-        return context
 
 
 class CostCenterCreateView(AuditFormMixin, CreateView):
@@ -106,7 +94,7 @@ class CostCenterFilterAutocompleteSelect2(autocomplete.Select2QuerySetView):
         return CostCenter.objects.filter(office=get_office_session(self.request))
 
     def get_queryset(self):
-        if not self.request.user.is_authenticated():
+        if not self.request.user.is_authenticated:
             return CostCenter.objects.none()
         qs = self.base_queryset
         if self.q:

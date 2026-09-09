@@ -1,0 +1,9 @@
+{% load static %}
+{% comment %}
+Marca do sistema (mascote do kit de identidade Quati + nome).
+Uso: {% include 'skeleton/includes/brand.html' with tagline=True %}
+{% endcomment %}
+<span class="q-brand">
+    <img src="{% static 'img/quati-icon-96.png' %}" alt="" width="36" height="36">
+    <span class="q-brand-name">Quati{% if tagline %}<small>logística jurídica</small>{% endif %}</span>
+</span>

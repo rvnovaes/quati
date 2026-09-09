@@ -448,7 +448,7 @@
                                     <table border="0" cellpadding="0" cellspacing="0" width="100%" id="templateHeader">
                                         <tr>
                                             <td valign="top" class="headerContent">
-                                                <center><img src="https://mtostes.ezlawyer.com.br{% static "img/logo_ezl.png" %}" style="max-width:600px; padding: 20px 0" id="headerImage" mc:label="header_image" mc:edit="header_image" mc:allowdesigner mc:allowtext /></center>
+                                                <center><img src="{{ project_link }}{% static "img/quati-logo.png" %}" style="max-width:160px; padding: 20px 0" id="headerImage" mc:label="header_image" mc:edit="header_image" mc:allowdesigner mc:allowtext /></center>
                                             </td>
                                         </tr>
                                     </table>
@@ -558,6 +558,7 @@
                                             <td valign="top" class="bodyContent" mc:edit="body_content">
                                                 <hr />
                                                 Este é um email automático. Ressaltamos que esta caixa postal não recebe e-mail de resposta.
+                                                {% if original_recipients %}<p><small>Destinatário(s) originais: {{ original_recipients }}</small></p>{% endif %}
 
                                             </td>
                                         </tr>

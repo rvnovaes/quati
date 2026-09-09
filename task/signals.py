@@ -4,7 +4,6 @@ from django.dispatch import receiver, Signal
 from django.utils import timezone
 from django.db.models import Q
 from django.core.exceptions import MultipleObjectsReturned
-from advwin_models.tasks import export_ecm, export_task, export_task_history, delete_ecm
 from task.models import Task, Ecm, EcmTask, TaskStatus, TaskHistory, TaskGeolocation
 from task.utils import create_ecm_task
 from task.workflow import get_parent_status, get_child_status, get_parent_fields, get_child_recipients, \
@@ -12,7 +11,7 @@ from task.workflow import get_parent_status, get_child_status, get_parent_fields
 from chat.models import Chat, UserByChat
 from chat.utils import create_users_company_by_chat
 from lawsuit.models import CourtDistrict
-from core.utils import check_environ, get_office_session, field_has_changed, get_history_changes
+from core.utils import get_office_session, field_has_changed, get_history_changes
 from core.models import CustomSettings
 from task.mail import TaskMail
 import logging
@@ -30,18 +29,7 @@ from manager.enums import TemplateKeys
 
 logger = logging.getLogger(__name__)
 
-send_notes_execution_date = Signal(
-    providing_args=['notes', 'instance', 'execution_date'])
-
-
-@check_environ
-def ezl_export_task_to_advwin(sender, instance, **kwargs):
-    try:
-        if not getattr(instance, '_skip_signal',
-                       None) and instance.legacy_code:
-            export_task.delay(instance.pk, None, True, instance.__previous_status.value)
-    except:
-        pass
+send_notes_execution_date = Signal()  # args: notes, instance, execution_date, survey_result
 
 
 def create_or_update_user_by_chat(task, task_to_fields, fields):
@@ -231,7 +219,6 @@ def post_save_task(sender, instance, created, **kwargs):
     seguintes.
     """
     try:
-        transaction.on_commit(lambda: ezl_export_task_to_advwin(sender, instance, **kwargs))
         workflow_task(sender, instance, created, **kwargs)
         instance.__previous_status = TaskStatus(instance.task_status)
         create_or_update_chat(sender, instance, created, **kwargs)
@@ -246,11 +233,6 @@ def post_save_task(sender, instance, created, **kwargs):
 def ecm_task_post_save(sender, instance, created, **kwargs):
     if not created:
         return
-
-    # Copia o Ecm para o sistema de origem
-    # filtra pelo id do office == 1 para exportar apenas ecm do mta
-    if instance.ecm.legacy_code is None and instance.task.legacy_code and instance.task.office.id == 1:
-        export_ecm.delay(instance.ecm.id, instance.task.id)
 
     # Copia o EcmTask para todos os pais e filhos recursivamente
     if instance.task.parent:
@@ -267,7 +249,6 @@ def create_ecm_task_for_ecm(sender, instance, created, **kwargs):
 
 
 @receiver(post_delete, sender=Ecm)
-@check_environ
 def delete_related_ecm(sender, instance, **kwargs):
     ecm_related = instance.ecm_related_id
     if not ecm_related:
@@ -275,16 +256,6 @@ def delete_related_ecm(sender, instance, **kwargs):
     if ecm_related:
         transaction.on_commit(lambda: Ecm.objects.filter(Q(pk=ecm_related)
                                                          | Q(ecm_related_id=ecm_related)).delete())
-
-
-@receiver(pre_delete, sender=Ecm)
-@check_environ
-def delete_ecm_advwin(sender, instance, **kwargs):
-    if instance.legacy_code:
-        return
-    ecm_task = instance.ecmtask_set.filter(task__legacy_code__isnull=False).first()
-    if ecm_task:
-        delete_ecm(instance.id, ecm_task.task.id)
 
 
 @receiver(post_init, sender=Task)
@@ -495,5 +466,3 @@ def post_create_historical_record_callback(sender, **kwargs):
             workflow_send_mail(instance, by_person)
     except:
         pass
-    if instance.legacy_code:
-        export_task_history.delay(history_instance.pk)

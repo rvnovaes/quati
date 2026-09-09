@@ -6,7 +6,7 @@ from django.utils.timezone import make_aware
 from import_export.widgets import ForeignKeyWidget, Widget, DateTimeWidget
 from task.models import TaskStatus
 from task.messages import wrong_task_status
-from codemirror import CodeMirrorTextarea
+from core.widgets import CodeMirrorTextarea
 
 code_mirror_schema = CodeMirrorTextarea(
     mode="javascript",

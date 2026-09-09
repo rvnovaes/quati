@@ -98,6 +98,8 @@
                 $('#processing').modal('show');
                 $.ajax({
                     url: getUrlDelete(pk),
+                    type: 'POST',
+                    headers: {'X-CSRFToken': '{{ csrf_token }}'},
                     dataType: 'json',
 
                     success: function (data) {                    

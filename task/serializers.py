@@ -3,7 +3,6 @@ from rest_framework import serializers
 from core.models import Person, Office
 from core.serializers import OfficeDefault, CreateUserDefault, CreateUserSerializerMixin, OfficeSerializerMixin, \
     AuditSerializerMixin
-from rest_framework.compat import unicode_to_repr
 from rest_framework.pagination import PageNumberPagination
 from task.utils import validate_final_deadline_date
 from task.messages import min_hour_error
@@ -12,18 +11,21 @@ from manager.enums import TemplateKeys
 
 
 class PersonAskedByDefault(object):
-    def set_context(self, serializer_field):
+    requires_context = True
+
+    def __call__(self, serializer_field):
         try:
             self.person_asked_by = serializer_field.context[
                 'request'].auth.application.user.person
         except:
             self.person_asked_by = None
+        return self._value()
 
-    def __call__(self):
+    def _value(self):
         return self.person_asked_by
 
     def __repr__(self):
-        return unicode_to_repr('%s()' % self.__class__.__name__)
+        return '%s()' % self.__class__.__name__
 
 
 class TypeTaskMainSerializer(serializers.ModelSerializer):

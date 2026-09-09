@@ -1,8 +1,7 @@
-from django.contrib.auth.models import User
-from django.core.urlresolvers import reverse
-from django.test import TestCase
+from django.urls import reverse
+from tests.support import OfficeTestCase
 
-from model_mommy import mommy
+from model_bakery import baker as mommy
 
 from core.models import Person
 from lawsuit.forms import LawSuitForm, CourtDivisionForm, InstanceForm, FolderForm, \
@@ -19,10 +18,9 @@ from lawsuit.models import LawSuit, CourtDistrict, CourtDivision, Folder, Instan
 # convencional
 
 
-class LawSuitTest(TestCase):
+class LawSuitTest(OfficeTestCase):
     def setUp(self):
-        User.objects.create_user(username='username', password='password')
-        self.client.login(username='username', password='password')
+        self.setup_office()
 
     def test_routine(self):
         c_inst = mommy.make(LawSuit)
@@ -32,10 +30,10 @@ class LawSuitTest(TestCase):
         person_lawyer = mommy.make(
             Person, name='Adv', is_lawyer=True, is_active=True).id
         folder = mommy.make(Folder).id
-        instance = mommy.make(Instance).id
+        instance = mommy.make(Instance, office=self.office).id
         court_district = mommy.make(CourtDistrict).id
         organ = mommy.make(Organ, name='Court', is_active=True).id
-        court_division = mommy.make(CourtDivision, is_active=True).id
+        court_division = mommy.make(CourtDivision, office=self.office, is_active=True).id
         law_suit_number = '12345'
 
         data = {
@@ -45,10 +43,10 @@ class LawSuitTest(TestCase):
             'court_district': court_district,
             'organ': organ,
             'court_division': court_division,
-            'law_suit_number': law_suit_number
+            'law_suit_number': law_suit_number, 'type_lawsuit': 'JUDICIAL'
         }
 
-        form = LawSuitForm(data=data)
+        form = LawSuitForm(data={**data, "office": self.office.pk}, request=self.post_request)
         self.assertTrue(form.is_valid(), form.errors)
 
     def test_list_view(self):
@@ -58,7 +56,7 @@ class LawSuitTest(TestCase):
         self.assertEqual(resp.status_code, 200)
 
     def test_create_view(self):
-        url = reverse('lawsuit_add', kwargs={'folder': 1})
+        url = reverse('lawsuit_add', kwargs={'folder': self.folder.pk})
         resp = self.client.get(url)
 
         self.assertEqual(resp.status_code, 200)
@@ -77,18 +75,16 @@ class LawSuitTest(TestCase):
 
     def test_delete_view(self):
         c_inst = mommy.make(LawSuit)
-        data = {'lawsuit_list': {c_inst.id}, 'parent_class': c_inst.folder.id}
+        data = {'selection': [c_inst.id], 'parent_class': c_inst.folder.id}
         url = reverse('lawsuit_delete')
-        resp = self.client.post(url, data, follow=True)
-        # print(resp.context)
+        resp = self.client.post(url, data)
+        self.assertEqual(resp.status_code, 302)
+        self.assertFalse(LawSuit.objects.filter(pk=c_inst.pk).exists())
 
-        self.assertEqual(resp.status_code, 200)
 
-
-class InstanceTest(TestCase):
+class InstanceTest(OfficeTestCase):
     def setUp(self):
-        User.objects.create_user(username='username', password='password')
-        self.client.login(username='username', password='password')
+        self.setup_office()
 
     # todo teste tem que ter o prefixo test_
     def test_routine(self):
@@ -100,7 +96,7 @@ class InstanceTest(TestCase):
         name = 'Tipo_Instacia_BLABLABLA'
 
         data = {'name': name}
-        form = InstanceForm(data=data)
+        form = InstanceForm(data={**data, "office": self.office.pk}, request=self.post_request)
         print(form.errors)
         self.assertTrue(form.is_valid())
 
@@ -125,18 +121,18 @@ class InstanceTest(TestCase):
 
     def test_delete_view(self):
         c_inst = mommy.make(Instance, name='123')
-        data = {'instance_list': {c_inst.id}}
+        data = {'selection': [c_inst.id]}
         url = reverse('instance_delete')
         resp = self.client.post(url, data, follow=True)
         # print(resp.context)
 
         self.assertEqual(resp.status_code, 200)
+        self.assertFalse(type(c_inst).objects.filter(pk=c_inst.pk).exists())
 
 
-class FolderTest(TestCase):
+class FolderTest(OfficeTestCase):
     def setUp(self):
-        User.objects.create_user(username='username', password='password')
-        self.client.login(username='username', password='password')
+        self.setup_office()
         self.c_inst = mommy.make(Folder)
 
     def test_routine(self):
@@ -152,7 +148,7 @@ class FolderTest(TestCase):
             'person_customer': person_customer,
             'cost_center': None
         }
-        form = FolderForm(data=data)
+        form = FolderForm(data={**data, "office": self.office.pk}, request=self.post_request)
         self.assertTrue(form.is_valid())
 
     def test_list_view(self):
@@ -175,18 +171,18 @@ class FolderTest(TestCase):
 
     def test_delete_view(self):
         c_inst = mommy.make(Folder)
-        data = {'folder_list': {c_inst.id}}
+        data = {'selection': [c_inst.id]}
         url = reverse('folder_delete')
         resp = self.client.post(url, data, follow=True)
         # print(resp.context)
 
         self.assertEqual(resp.status_code, 200)
+        self.assertFalse(type(c_inst).objects.filter(pk=c_inst.pk).exists())
 
 
-class CourtDivisionTest(TestCase):
+class CourtDivisionTest(OfficeTestCase):
     def setUp(self):
-        User.objects.create_user(username='username', password='password')
-        self.client.login(username='username', password='password')
+        self.setup_office()
         self.c_inst = mommy.make(CourtDivision)
 
     def test_routine(self):
@@ -198,7 +194,7 @@ class CourtDivisionTest(TestCase):
 
         data = {'name': name, 'legacy_code': legacy_code}
 
-        form = CourtDivisionForm(data=data)
+        form = CourtDivisionForm(data={**data, "office": self.office.pk}, request=self.post_request)
         print(form.errors)
         self.assertTrue(form.is_valid())
 
@@ -222,18 +218,18 @@ class CourtDivisionTest(TestCase):
 
     def test_delete_view(self):
         c_inst = mommy.make(CourtDivision)
-        data = {'courtdivision_list': {c_inst.id}}
+        data = {'selection': [c_inst.id]}
         url = reverse('courtdivision_delete')
         resp = self.client.post(url, data, follow=True)
         # print(resp.context)
 
         self.assertEqual(resp.status_code, 200)
+        self.assertFalse(type(c_inst).objects.filter(pk=c_inst.pk).exists())
 
 
-class CourtDistrictTest(TestCase):
+class CourtDistrictTest(OfficeTestCase):
     def setUp(self):
-        User.objects.create_user(username='username', password='password')
-        self.client.login(username='username', password='password')
+        self.setup_office()
         self.c_inst = mommy.make(CourtDistrict)
 
     def test_routine(self):
@@ -244,7 +240,7 @@ class CourtDistrictTest(TestCase):
         name = 'Test123'
 
         data = {'name': name, 'state': state}
-        form = CourtDistrictForm(data=data)
+        form = CourtDistrictForm(data={**data, "office": self.office.pk}, request=self.post_request)
         self.assertTrue(form.is_valid(), form.errors)
 
     def test_list_view(self):
@@ -267,22 +263,22 @@ class CourtDistrictTest(TestCase):
 
     def test_delete_view(self):
         c_inst = mommy.make(CourtDistrict)
-        data = {'courtdistrict_list': {c_inst.id}}
+        data = {'selection': [c_inst.id]}
         url = reverse('courtdistrict_delete')
         resp = self.client.post(url, data, follow=True)
         # print(resp.context)
 
         self.assertEqual(resp.status_code, 200)
+        self.assertFalse(type(c_inst).objects.filter(pk=c_inst.pk).exists())
 
 
-class MovementTest(TestCase):
+class MovementTest(OfficeTestCase):
     def setUp(self):
-        User.objects.create_user(username='username', password='password')
-        self.client.login(username='username', password='password')
-        # self.c_inst = mommy.make(Movement)
+        self.setup_office()
+        # self.c_inst = self.movement
 
     def test_routine(self):
-        c_inst = mommy.make(Movement)
+        c_inst = self.movement
         self.assertTrue(isinstance(c_inst, Movement))
 
     def test_valid_MovementForm(self):
@@ -298,7 +294,7 @@ class MovementTest(TestCase):
             'type_movement': type_movement
         }
 
-        form = MovementForm(data=data)
+        form = MovementForm(data={**data, "office": self.office.pk}, request=self.post_request)
         print(form.errors)
 
         self.assertTrue(form.is_valid())
@@ -310,13 +306,13 @@ class MovementTest(TestCase):
         self.assertEqual(resp.status_code, 200)
 
     def test_create_view(self):
-        c_inst = mommy.make(Movement)
+        c_inst = self.movement
         url = reverse('movement_add', kwargs={'lawsuit': c_inst.law_suit.id})
         resp = self.client.get(url)
         self.assertEqual(resp.status_code, 200)
 
     def test_update_view(self):
-        c_inst = mommy.make(Movement)
+        c_inst = self.movement
         url = reverse(
             'movement_update',
             kwargs={
@@ -328,7 +324,7 @@ class MovementTest(TestCase):
         self.assertEqual(resp.status_code, 200)
 
     # def test_delete_view(self):
-    #     c_inst = mommy.make(Movement)
+    #     c_inst = self.movement
     #     data = {'movement_list': {c_inst.id}, 'parent_class': c_inst.law_suit.id}
     #     url = reverse('movement_delete')
     #     resp = self.client.post(url, data, follow=True)
@@ -337,10 +333,9 @@ class MovementTest(TestCase):
     #     self.assertEqual(resp.status_code, 200)
 
 
-class TypeMovementTest(TestCase):
+class TypeMovementTest(OfficeTestCase):
     def setUp(self):
-        User.objects.create_user(username='username', password='password')
-        self.client.login(username='username', password='password')
+        self.setup_office()
         self.c_inst = mommy.make(TypeMovement, name='RandomTM')
 
     def test_routine(self):
@@ -355,7 +350,7 @@ class TypeMovementTest(TestCase):
         uses_wo = True
 
         data = {'name': name, 'uses_wo': uses_wo, 'legacy_code': legacy_code}
-        form = TypeMovementForm(data=data)
+        form = TypeMovementForm(data={**data, "office": self.office.pk}, request=self.post_request)
         self.assertTrue(form.is_valid(), form.errors)
 
     def test_list_view(self):
@@ -378,9 +373,10 @@ class TypeMovementTest(TestCase):
 
     def test_delete_view(self):
         c_inst = mommy.make(TypeMovement)
-        data = {'type_movement_list': {c_inst.id}}
+        data = {'selection': [c_inst.id]}
         url = reverse('type_movement_delete')
         resp = self.client.post(url, data, follow=True)
         # print(resp.context)
 
         self.assertEqual(resp.status_code, 200)
+        self.assertFalse(type(c_inst).objects.filter(pk=c_inst.pk).exists())

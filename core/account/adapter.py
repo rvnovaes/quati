@@ -1,4 +1,6 @@
-from allauth.socialaccount.adapter import *
+from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
+from allauth.account.utils import user_username, user_email, user_field
+from allauth.utils import valid_email_or_none
 from django.contrib.auth.models import User
 
 class EzlSocialAccountAdapter(DefaultSocialAccountAdapter):

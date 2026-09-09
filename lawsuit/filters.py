@@ -4,8 +4,8 @@ from django_filters import rest_framework as filters
 
 
 class CourtDistrictFilter(filters.FilterSet):
-    state = filters.CharFilter(name="state__initials", lookup_expr='iexact')
-    name = filters.CharFilter(name='name', lookup_expr='icontains')
+    state = filters.CharFilter(field_name="state__initials", lookup_expr='iexact')
+    name = filters.CharFilter(field_name='name', lookup_expr='icontains')
 
     class Meta:
         model = CourtDistrict
@@ -13,8 +13,8 @@ class CourtDistrictFilter(filters.FilterSet):
 
 
 class InstanceFilter(filters.FilterSet):
-    name = filters.CharFilter(name='name', lookup_expr='icontains')
-    legacy_code = filters.CharFilter(name='legacy_code', lookup_expr='exact')
+    name = filters.CharFilter(field_name='name', lookup_expr='icontains')
+    legacy_code = filters.CharFilter(field_name='legacy_code', lookup_expr='exact')
 
     class Meta:
         model = Instance
@@ -22,9 +22,9 @@ class InstanceFilter(filters.FilterSet):
 
 
 class MovementFilter(filters.FilterSet):
-    legacy_code = filters.CharFilter(name='legacy_code', lookup_expr='iexact')
-    law_suit_number = filters.CharFilter(name='law_suit__law_suit_number', lookup_expr='iexact')
-    type_movement_legacy_code = filters.CharFilter(name='type_movement__legacy_code', lookup_expr='iexact')
+    legacy_code = filters.CharFilter(field_name='legacy_code', lookup_expr='iexact')
+    law_suit_number = filters.CharFilter(field_name='law_suit__law_suit_number', lookup_expr='iexact')
+    type_movement_legacy_code = filters.CharFilter(field_name='type_movement__legacy_code', lookup_expr='iexact')
 
     class Meta:
         model = Movement
@@ -32,7 +32,7 @@ class MovementFilter(filters.FilterSet):
 
 
 class LawsuitFilter(filters.FilterSet):
-    company_id = filters.CharFilter(name='folder__person_customer__company_id')
+    company_id = filters.CharFilter(field_name='folder__person_customer__company_id')
     class Meta:
         model = LawSuit
         fields = ['company_id']

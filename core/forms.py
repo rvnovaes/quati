@@ -8,23 +8,20 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.forms import ModelForm
 from django.forms import CheckboxInput, formset_factory
 from django.forms.models import inlineformset_factory
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.urls.base import reverse
 from django.core.exceptions import FieldDoesNotExist
 from localflavor.br.forms import BRCPFField, BRCNPJField
-from material import Layout, Row
 from allauth.account.adapter import get_adapter
 from allauth.account.utils import filter_users_by_username, user_pk_to_url_str, user_email
 from core.fields import CustomBooleanField
 from core.models import ContactUs, Person, Address, City, ContactMechanism, ContactMechanismType, AddressType, \
     LegalType, Office, Invite, InviteOffice, Team
-from core.utils import filter_valid_choice_form, get_office_field, get_office_session, get_domain, get_person_field
-from core.widgets import TypeaHeadForeignKeyWidget, MDSelect
+from core.utils import get_office_field, get_office_session, get_domain, get_person_field
+from core.widgets import TypeaHeadForeignKeyWidget, MDSelect, CodeMirrorTextarea, MultipleFileField
 from core.models import OfficeMixin, ImportXlsFile
-from django_file_form.forms import MultipleUploadedFileField, FileFormMixin, UploadedFileField
 from core.utils import validate_xlsx_header
 from django.core.exceptions import ValidationError
-from codemirror import CodeMirrorTextarea
 
 
 code_mirror = CodeMirrorTextarea(
@@ -43,7 +40,10 @@ code_mirror_schema = CodeMirrorTextarea(
 )
 
 
-class BaseModelForm(FileFormMixin, forms.ModelForm):
+class BaseModelForm(forms.ModelForm):
+    # Layout opcional: lista de linhas, cada linha uma tupla de nomes de campos.
+    layout = None
+
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop('request', None)
         super().__init__(*args, **kwargs)
@@ -56,11 +56,24 @@ class BaseModelForm(FileFormMixin, forms.ModelForm):
             use_upload = getattr(self.instance, "use_upload", False)
         if self.initial.__len__() == 0 and use_upload:
             required = getattr(self.instance, "upload_required", False)
-            documents = MultipleUploadedFileField(required=required)
+            documents = MultipleFileField(required=required)
             self.fields.update({'documents': documents})
 
     def get_model_verbose_name(self):
         return self._meta.model._meta.verbose_name
+
+    def delete_temporary_files(self):
+        # Compatibilidade com o antigo django-file-form: uploads agora são diretos, nada a limpar.
+        return None
+
+    def layout_rows(self):
+        """Linhas do layout com os BoundFields correspondentes (para os templates de formulário)."""
+        if not self.layout:
+            return None
+        rows = []
+        for row in self.layout:
+            rows.append([self[name] for name in row if name in self.fields])
+        return rows
 
     def set_office_queryset(self):
         if get_office_session(self.request) and self.request.method == 'GET':
@@ -164,7 +177,7 @@ class ContactMechanismForm(BaseModelForm):
         ]
 
     contact_mechanism_type = forms.ModelChoiceField(
-        queryset=filter_valid_choice_form(ContactMechanismType.objects.all()),
+        queryset=ContactMechanismType.objects.all(),
         empty_label='',
         required=True,
         label='Tipo',
@@ -195,7 +208,7 @@ class AddressForm(BaseModelForm):
                                   widget=MDSelect(url='/city/autocomplete_select2/', ),
                                   queryset=City.objects.all())
     address_type = forms.ModelChoiceField(
-        queryset=filter_valid_choice_form(AddressType.objects.all()),
+        queryset=AddressType.objects.all(),
         empty_label='',
         required=True,
         label='Tipo',
@@ -208,13 +221,13 @@ class AddressForm(BaseModelForm):
             'class': 'filled-in',
         }))
 
-    layout = Layout(
-        Row('address_type'),
-        Row('street', 'number', 'complement'),
-        Row('city_region', 'city', 'zip_code'),
-        Row('notes'),
-        Row('is_active'),
-    )
+    layout = [
+        ('address_type', ),
+        ('street', 'number', 'complement'),
+        ('city_region', 'city', 'zip_code'),
+        ('notes', ),
+        ('is_active', ),
+    ]
 
     class Meta:
         model = Address
@@ -247,8 +260,7 @@ class PersonForm(BaseModelForm):
     )
 
     auth_user = forms.ModelChoiceField(
-        queryset=filter_valid_choice_form(
-            User.objects.all().order_by('username')),
+        queryset=User.objects.all().order_by('username'),
         empty_label='',
         required=False,
         label='Usuário do sistema',
@@ -285,16 +297,16 @@ class PersonForm(BaseModelForm):
         is_admin = kwargs.pop('is_admin', None)
         super().__init__(*args, **kwargs)
         if is_admin:
-            self.layout = Layout(
-                Row('legal_name', 'name'),
-                Row('legal_type', 'cpf_cnpj'),
-                Row('auth_user', 'import_from_legacy'),
-                Row('is_lawyer', 'is_customer', 'is_supplier', 'is_active'),
-            )
+            self.layout = [
+                ('legal_name', 'name'),
+                ('legal_type', 'cpf_cnpj'),
+                ('auth_user', 'import_from_legacy'),
+                ('is_lawyer', 'is_customer', 'is_supplier', 'is_active'),
+            ]
         else:
-            self.layout = Layout(
-                Row('legal_name', 'name'), Row('legal_type', 'cpf_cnpj'),
-                Row('is_lawyer', 'is_customer', 'is_supplier', 'is_active'))
+            self.layout = [
+                ('legal_name', 'name'), ('legal_type', 'cpf_cnpj'),
+                ('is_lawyer', 'is_customer', 'is_supplier', 'is_active')]
 
 
 AddressFormSet = inlineformset_factory(
@@ -551,7 +563,7 @@ class OfficeForm(BaseModelForm):
 
 class OfficeProfileForm(OfficeForm):
 
-    logo = UploadedFileField(required=False)
+    logo = forms.FileField(required=False)
 
     class Meta:
         model = Office

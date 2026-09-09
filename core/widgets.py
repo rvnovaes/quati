@@ -2,9 +2,9 @@ import datetime
 from dal.widgets import QuerySetSelectMixin
 from django import forms
 from django.forms.widgets import boolean_check, Input, DateTimeBaseInput, ChoiceWidget
-from django.utils import six, translation
+from django.utils import translation
 from django.utils import timezone
-from django.utils.encoding import force_text
+from django.utils.encoding import force_str
 from django_filters import RangeFilter
 from django.forms.widgets import Widget
 from django.template import loader
@@ -26,7 +26,7 @@ class MDDateTimepicker(DateTimeBaseInput):
                 self.min_date).strftime('%d/%m/%Y %H:%M')
         if self.max_date:
             context['widget']['max_date'] = True
-        if value and not isinstance(value, six.string_types):
+        if value and not isinstance(value, str):
             context['widget']['value'] = value.strftime('%d/%m/%Y %H:%M')
         context['widget']['format'] = self.format
         return context
@@ -50,7 +50,7 @@ class MDDatePicker(DateTimeBaseInput):
             context['widget']['min_date'] = timezone.localtime(
                 self.min_date).strftime('%d/%m/%Y')
 
-        if value and not isinstance(value, six.string_types):
+        if value and not isinstance(value, str):
             context['widget']['value'] = value.strftime('%d/%m/%Y')
             # self.value = value.strftime('%d/%m/%Y %H:%M')
         return context
@@ -75,7 +75,7 @@ class MDCheckboxInput(Input):
         """Only return the 'value' attribute if value isn't empty."""
         if value is True or value is False or value is None or value == '':
             return
-        return force_text(value)
+        return force_str(value)
 
     def get_context(self, name, value, attrs):
         if self.check_test(value):
@@ -93,7 +93,7 @@ class MDCheckboxInput(Input):
         value = data.get(name)
         # Translate true and false strings to boolean values.
         values = {'true': True, 'false': False}
-        if isinstance(value, six.string_types):
+        if isinstance(value, str):
             value = values.get(value.lower(), value)
         return bool(value)
 
@@ -200,19 +200,19 @@ class MDDateTimeRangeFilter(RangeFilter):
 class MDSelect(ModelSelect2):
 
     class Media:
+        # Assets do django-autocomplete-light >= 3.9 (select2 vem do admin do Django)
         extend = False
         css = {
             'all': (
-                'autocomplete_light/vendor/select2/dist/css/select2.css',
+                'admin/css/vendor/select2/select2.css',
                 'autocomplete_light/select2.css',
-                'select2.css'
             )
         }
-        js = ('autocomplete_light/jquery.init.js',
-              'autocomplete_light/vendor/select2/dist/js/select2.full.js',
-              'autocomplete_light/vendor/select2/dist/js/i18n/pt-BR.js',
-              'autocomplete_light/autocomplete.init.js',
+        js = ('admin/js/vendor/select2/select2.full.js',
+              # cópia patchada (inicializa no document.ready); nome próprio evita cache do arquivo antigo
+              'autocomplete_light/ezl_autocomplete_light.js',
               'autocomplete_light/select2.js',
+              'autocomplete_light/i18n/pt-BR.js',
               )
 
     def build_attrs(self, *args, **kwargs):
@@ -231,7 +231,7 @@ class MDSelect(ModelSelect2):
     def _choice_has_empty_value(choice):
         """Return True if the choice's value is empty string or None."""
         value, _ = choice
-        return ((isinstance(value, six.string_types) and not bool(value))
+        return ((isinstance(value, str) and not bool(value))
                 or value is None)
 
     def use_required_attribute(self, initial):
@@ -318,3 +318,49 @@ class TypeaHeadForeignKeyWidget(TypeaHeadWidget):
                 'forward_id': self.forward_id
             }
         }
+
+
+class CodeMirrorTextarea(forms.Textarea):
+    """
+    Textarea com editor CodeMirror (assets vendorizados em core/static/codemirror).
+    Substitui o pacote django-codemirror-widget, descontinuado.
+    """
+    template_name = 'core/widgets/codemirror.html'
+
+    def __init__(self, mode='javascript', theme='material', config=None, attrs=None):
+        self.mode = mode
+        self.theme = theme
+        self.config = config or {}
+        super().__init__(attrs)
+
+    def get_context(self, name, value, attrs):
+        import json
+        context = super().get_context(name, value, attrs)
+        context['widget']['mode'] = self.mode
+        context['widget']['theme'] = self.theme
+        context['widget']['config'] = json.dumps(self.config)
+        return context
+
+    class Media:
+        css = {'all': ('codemirror/lib/codemirror.css', 'codemirror/theme/material.css')}
+        js = ('codemirror/lib/codemirror.js', 'codemirror/mode/javascript/javascript.js',
+              'codemirror/mode/python/python.js')
+
+
+class MultipleFileInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
+
+
+class MultipleFileField(forms.FileField):
+    """Campo de upload múltiplo nativo do Django (substitui django-file-form)."""
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('widget', MultipleFileInput(attrs={'multiple': True}))
+        super().__init__(*args, **kwargs)
+
+    def clean(self, data, initial=None):
+        single_clean = super().clean
+        if isinstance(data, (list, tuple)):
+            return [single_clean(item, initial) for item in data]
+        cleaned = single_clean(data, initial)
+        return [cleaned] if cleaned else []
